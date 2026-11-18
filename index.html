@@ -49,11 +49,25 @@ img.spr,canvas.px8{image-rendering:pixelated;image-rendering:crisp-edges}
 /* hud */
 .hud{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .stb{padding:7px 9px;font-size:10px;color:var(--gold);background:#2a1d55}
-.weeks{flex:1;display:grid;grid-template-columns:repeat(20,1fr);gap:2px}
+.weeks{flex:1;display:grid;grid-template-columns:repeat(30,1fr);gap:1px}
 .weeks i{height:12px;background:#262a52;border:1px solid #000}
 .weeks i.d{background:var(--gold)}
 .weeks i.c{background:#fff;animation:blink .6s steps(2) infinite}
-.weeks i.bs{background:#ff4d5e55}
+.weeks i.ch{box-shadow:inset 0 0 0 2px #ff8a1f}
+.ticker{overflow:hidden;white-space:nowrap;font-size:12px;color:#ffd23f;padding:6px 0;border-top:2px solid #13203a;font-weight:700}
+.ticker span{display:inline-block;padding-left:100%;animation:tick 16s linear infinite}
+@keyframes tick{to{transform:translateX(-100%)}}
+.shop{background:#1d1440}
+.sline{background:#0b0d24;border:2px solid #000;padding:8px 10px;margin:7px 0;font-size:13px;font-weight:700;line-height:1.5;display:flex;gap:8px;align-items:center}
+.sline .pf{font-size:7px;padding:4px 5px;background:#000;flex:none}
+.sline.l0 .pf{color:#aab0c9}.sline.l1 .pf{color:#5b9bff}.sline.l2 .pf{color:var(--gold)}
+.sline.l2{box-shadow:inset 0 0 0 2px var(--gold);color:var(--gold)}
+.sline.l9{color:var(--mut)}
+#shopBtn{width:100%;padding:10px;font-size:14px;margin-top:4px;line-height:1.5}
+.divider{font-size:8px;color:var(--mut);padding:10px 0 2px;border-top:3px dashed #2c3060}
+.sec2{font-size:10px;color:#9ad0ff;margin-left:6px;font-weight:700}
+.creal{padding:10px 0;border-top:2px dashed #2c3060}.creal:first-of-type{border-top:none}
+.creal img{vertical-align:-8px;margin-right:6px}.creal p{font-size:13px;color:#dcdaf2;line-height:1.6;margin:6px 0 2px}
 .hudr{display:flex;gap:4px;align-items:center}
 #rwIcons{display:flex;gap:1px;align-items:center;font-size:10px}
 #mute{padding:5px 7px;font-size:10px}
@@ -95,6 +109,7 @@ img.spr,canvas.px8{image-rendering:pixelated;image-rendering:crisp-edges}
 .invh{font-size:10px;color:var(--gold)}
 .slot{display:grid;grid-template-columns:52px 1fr auto;gap:4px 10px;align-items:center;padding:10px 0;border-top:3px dashed #2c3060}
 .slot:first-child{border-top:none}
+.divider+.slot{border-top:none}
 .icon{width:52px;height:52px;background:#0e1030;border:3px solid #000;box-shadow:inset 0 0 0 2px #2f3570;display:flex;align-items:center;justify-content:center}
 .slot.has .icon{box-shadow:inset 0 0 0 2px var(--gold),0 0 10px #ffd23f55}
 .an{font-weight:900;font-size:15px}
@@ -217,7 +232,7 @@ body.sepia .wrap{filter:sepia(.9) hue-rotate(225deg) saturate(1.6) contrast(1.1)
 <!-- GAME -->
 <section id="game" class="screen"><div class="wrap" id="gw">
   <div class="hud">
-    <div class="px stb pf" id="stg">STAGE 1/3</div>
+    <div class="px stb pf" id="stg">WEEK 1/30</div>
     <div class="weeks" id="weeks"></div>
     <div class="hudr"><span id="rwIcons"></span><button class="pbtn dark pf" id="mute">♪</button></div>
   </div>
@@ -228,8 +243,9 @@ body.sepia .wrap{filter:sepia(.9) hue-rotate(225deg) saturate(1.6) contrast(1.1)
     <div class="hpbar" id="hp"><i id="barI"></i><span class="tg" id="barT"></span></div>
     <div class="row small"><span id="danger"></span><span id="goal"></span></div>
   </div>
-  <div class="px crt"><div class="crt-in"><div class="crt-top pf"><span id="era">YEAR ????</span><span id="idxv">IDX 100.0</span></div><canvas id="chart"></canvas></div><div class="leds"><i></i><i></i></div></div>
+  <div class="px crt"><div class="crt-in"><div class="crt-top pf"><span id="era">YEAR ????</span><span id="idxv">IDX 100.0</span></div><canvas id="chart"></canvas><div class="ticker" id="ticker"></div></div><div class="leds"><i></i><i></i></div></div>
   <div class="px panel rumor"><span id="rIcon"></span><div class="tx"><div class="acc pf" id="racc">RUMOR 60%</div><div id="rtx"></div></div></div>
+  <div class="px panel shop"><div class="row"><span class="invh pf">INFO SHOP · 정보상</span><span class="small" id="shopT"></span></div><div id="shopLines"></div><button class="pbtn purp" id="shopBtn"></button></div>
   <div id="perkBar"></div>
   <div class="px panel"><div class="row" style="margin-bottom:4px"><span class="invh pf">INVENTORY</span></div><div id="assets"></div></div>
   <div class="bottom"><div class="in">
@@ -364,99 +380,154 @@ let SC=null;
 const LINES={happy:['가즈아!!','떡상이다!!','역시 나야','오늘 치킨이다'],moon:['달까지 가즈아!!!','이게 회귀자의 힘…','퇴사각!!'],sad:['아야…','물렸다…','존버는 승리한다…','엄마 미안해'],shock:['살려줘!!!','이게 무슨…','계좌 녹는다…','한강 물 온도…?'],neutral:['흠…','눈치 보는 중','관망이다'],start:['여긴… 어디지?','몇 년도지…?','차트가 낯설다…'],rewind:['기억이 남아있다…','이번엔 다르다','다시 한 번…']};
 let bubT=0;function say(kind){const el=$('#bubble');if(!el)return;const p=LINES[kind]||LINES.neutral;el.textContent=p[Math.random()*p.length|0];el.classList.add('on');clearTimeout(bubT);bubT=setTimeout(()=>el.classList.remove('on'),2300)}
 
-/* ========= data (실제 구간 근사) ========= */
+/* ========= data (실제 구간·실존 기업 흐름 근사) ========= */
+SPR.bldg=["...kkkkkk...","...kssssk...",".kkkkkkkkkk.",".kscscscsck.",".kssssssssk.",".kscscscsck.",".kssssssssk.",".kscscscsck.",".kssssssssk.",".ksssksssk..",".ksssknsssk.","kkkkkkkkkkkk"];
 const EPS=[
- {id:'dotcom',name:'2000 닷컴 버블 붕괴',short:'2000 닷컴',period:'2000.01 ~ 2000.12 · 코스닥',vol:3.0,k:[[0,2600],[.05,2300],[.18,2834],[.3,1900],[.4,1450],[.48,1800],[.58,1500],[.67,1300],[.75,900],[.85,700],[1,525]],ann:[[.18,'코스닥 사상 최고'],[.3,'나스닥 폭락 전염'],[.85,'IT 버블 붕괴']],lesson:'"이번엔 다르다"는 말이 가장 비쌌던 해. 고점 대비 -80%까지 빠졌어요.'},
- {id:'imf',name:'1998 IMF 이후 대반등',short:'1998 IMF 반등',period:'1998.06 ~ 1999.07 · 코스피',vol:2.5,k:[[0,300],[.05,280],[.2,310],[.35,400],[.5,562],[.6,590],[.7,610],[.8,750],[.9,880],[1,1030]],ann:[[.05,'코스피 280 바닥'],[.5,'금리 인하·구조조정'],[1,'1년 만에 3.7배']],lesson:'모두가 "한국 경제는 끝났다"고 할 때가 바닥이었어요.'},
- {id:'gfc',name:'2008 글로벌 금융위기',short:'2008 금융위기',period:'2008.05 ~ 2009.04 · 코스피',vol:2.0,k:[[0,1850],[.09,1670],[.18,1590],[.27,1470],[.36,1450],[.41,1300],[.44,938],[.5,1110],[.55,1000],[.64,1124],[.73,1160],[.82,1063],[.91,1206],[1,1369]],ann:[[.36,'리먼 브라더스 파산'],[.44,'코스피 938 바닥'],[.91,'반등 시작']],lesson:'공포가 극에 달한 10월에 판 사람과 산 사람의 1년 뒤가 완전히 갈렸어요.'},
- {id:'usdg',name:'2011 미국 신용등급 강등',short:'2011 등급 강등',period:'2011.06 ~ 2011.12 · 코스피',vol:1.8,k:[[0,2070],[.25,2172],[.3,2121],[.35,1801],[.4,1744],[.6,1652],[.75,1900],[.88,1840],[1,1825]],ann:[[.32,'S&P 미국 등급 강등'],[.6,'유럽 재정위기']],lesson:'하루 -6%가 며칠씩 이어져도, 몇 달 뒤엔 상당 부분 회복했어요.'},
- {id:'boxpi',name:'2015~2016 박스피',short:'2015 박스피',period:'2015.04 ~ 2016.06 · 코스피',vol:0.9,k:[[0,2100],[.07,2170],[.3,1830],[.5,2040],[.62,1840],[.82,2010],[.95,1925],[1,1970]],ann:[[.3,'중국 증시 폭락'],[.95,'브렉시트 투표']],lesson:'오르지도 내리지도 않는 장. 매매할수록 수수료만 나갔어요.'},
- {id:'semi',name:'2017 반도체 슈퍼사이클',short:'2017 반도체',period:'2017.01 ~ 2017.11 · 코스피',vol:0.7,k:[[0,2026],[.2,2160],[.3,2160],[.42,2350],[.6,2450],[.7,2320],[.88,2523],[1,2557]],ann:[[.42,'6년 박스권 돌파'],[.7,'북한 리스크']],lesson:'조용히, 꾸준히 오른 장. 일찍 팔고 떠난 사람이 가장 아쉬웠어요.'},
- {id:'covid',name:'2020 코로나 쇼크',short:'2020 코로나',period:'2020.01 ~ 2020.08 · 코스피',vol:1.8,k:[[0,2175],[.1,2267],[.22,2242],[.3,1987],[.38,1457],[.44,1685],[.55,1947],[.75,2147],[.88,2249],[1,2350]],ann:[[.3,'팬데믹 공포'],[.38,'코스피 1457 바닥'],[.55,'동학개미운동']],lesson:'역사상 가장 빠른 폭락과 가장 빠른 회복. 바닥에서 산 개미가 웃었어요.'},
- {id:'winter',name:'2021~22 동학개미의 겨울',short:'2021 개미의 겨울',period:'2021.06 ~ 2022.09 · 코스피',vol:1.1,k:[[0,3240],[.07,3305],[.15,3100],[.3,2950],[.4,3000],[.5,2614],[.6,2750],[.7,2600],[.8,2300],[.9,2490],[1,2155]],ann:[[.07,'코스피 3300 고점'],[.5,'연준 금리 인상'],[1,'2155까지 하락']],lesson:'3000 시대가 영원할 것 같았지만, 금리가 오르자 긴 겨울이 왔어요.'},
- {id:'bm24',name:'2024 여름 블랙먼데이',short:'2024 블랙먼데이',period:'2024.06 ~ 2024.12 · 코스피',vol:1.2,k:[[0,2680],[.2,2890],[.3,2676],[.32,2441],[.38,2697],[.5,2580],[.65,2600],[.8,2480],[.87,2500],[.92,2360],[1,2400]],ann:[[.32,'8/5 블랙먼데이 -8.8%'],[.38,'다음 날 급반등'],[.92,'12월 정치 불확실성']],lesson:'하루 -8.8%, 그리고 바로 반등. 패닉셀이 가장 비쌌던 날이었어요.'}
+ {id:'dotcom',name:'2000 닷컴 버블 붕괴',short:'2000 닷컴',period:'2000.01 ~ 2000.12 · 코스닥',vol:3.0,k:[[0,2600],[.05,2300],[.18,2834],[.3,1900],[.4,1450],[.48,1800],[.58,1500],[.67,1300],[.75,900],[.85,700],[1,525]],ann:[[.18,'코스닥 사상 최고'],[.3,'나스닥 폭락 전염'],[.85,'IT 버블 붕괴']],lesson:'"이번엔 다르다"는 말이 가장 비쌌던 해. 코스닥은 고점 대비 -80%까지 빠졌어요.',
+  comps:[
+   {alias:'S기술',real:'새롬기술',sec:'인터넷전화',vol:5,k:[[0,100],[.12,250],[.18,280],[.3,120],[.45,60],[.6,45],[.8,20],[1,12]],ev:[[.05,'up','무료 인터넷전화 가입자 폭증, 상한가 행진'],[.22,'down','증권가 "고평가" 경고 리포트'],[.5,'down','미국 자회사 적자 확대']],story:'무료 인터넷전화 "다이얼패드"로 닷컴 버블의 상징이 됐다가, 1년 만에 -90% 넘게 추락했어요.'},
+   {alias:'D커뮤니케이션',real:'다음커뮤니케이션',sec:'포털',vol:4.5,k:[[0,100],[.1,160],[.18,170],[.3,90],[.5,60],[.7,40],[1,25]],ev:[[.08,'up','무료 이메일 가입자 1천만 돌파 임박'],[.35,'down','닷컴 수익모델 의문 확산']],story:'한메일로 국민 포털이 됐지만 버블 붕괴와 함께 주가는 고점의 1/7 수준까지 내려왔어요.'},
+   {alias:'S전자',real:'삼성전자',sec:'반도체',vol:2.5,k:[[0,100],[.2,95],[.45,125],[.55,120],[.75,75],[1,55]],ev:[[.4,'up','D램 가격 급등, 사상 최대 실적'],[.68,'down','D램 가격 하락 전환 경고']],story:'상반기 D램 호황으로 신고가를 찍었지만, 하반기 반도체 가격 급락에 반 토막이 났어요.'}]},
+ {id:'imf',name:'1998 IMF 이후 대반등',short:'1998 IMF 반등',period:'1998.06 ~ 1999.07 · 코스피',vol:2.5,k:[[0,300],[.05,280],[.2,310],[.35,400],[.5,562],[.6,590],[.7,610],[.8,750],[.9,880],[1,1030]],ann:[[.05,'코스피 280 바닥'],[.5,'금리 인하·구조조정'],[1,'1년 만에 3.7배']],lesson:'모두가 "한국 경제는 끝났다"고 할 때가 바닥이었어요.',
+  comps:[
+   {alias:'S전자',real:'삼성전자',sec:'반도체',vol:3.5,k:[[0,100],[.1,90],[.3,130],[.5,250],[.7,280],[.85,420],[1,520]],ev:[[.25,'up','반도체 구조조정·빅딜 기대감'],[.8,'up','외국인, 반도체주 싹쓸이 매수']],story:'외환위기 바닥에서 외국인 매수가 몰리며 1년여 만에 5배 넘게 올랐어요.'},
+   {alias:'H자동차',real:'현대자동차',sec:'자동차',vol:3.5,k:[[0,100],[.1,85],[.4,180],[.6,200],[.8,320],[1,380]],ev:[[.35,'up','K자동차 인수 확정']],story:'부도난 기아자동차를 인수하며 위기 속에서 덩치를 키웠어요.'},
+   {alias:'D그룹 상사',real:'(주)대우',sec:'종합상사',vol:4,k:[[0,100],[.3,110],[.5,130],[.7,90],[.85,60],[1,35]],ev:[[.7,'down','D그룹 유동성 위기설 확산'],[.95,'down','채권단, D그룹 워크아웃 검토']],story:'재계 2위 대우그룹은 1999년 결국 해체됐어요. 모두가 반등할 때 혼자 무너진 사례예요.'}]},
+ {id:'gfc',name:'2008 글로벌 금융위기',short:'2008 금융위기',period:'2008.05 ~ 2009.04 · 코스피',vol:2.0,k:[[0,1850],[.09,1670],[.18,1590],[.27,1470],[.36,1450],[.41,1300],[.44,938],[.5,1110],[.55,1000],[.64,1124],[.73,1160],[.82,1063],[.91,1206],[1,1369]],ann:[[.36,'리먼 브라더스 파산'],[.44,'코스피 938 바닥'],[.91,'반등 시작']],lesson:'공포가 극에 달한 10월에 판 사람과 산 사람의 1년 뒤가 완전히 갈렸어요.',
+  comps:[
+   {alias:'S전자',real:'삼성전자',sec:'반도체',vol:2.5,k:[[0,100],[.2,85],[.36,80],[.44,58],[.6,62],[.75,65],[1,78]],ev:[[.4,'down','반도체 가격 폭락, 적자 전환 우려'],[.9,'up','감산 효과로 업황 바닥론 솔솔']],story:'반도체 불황과 금융위기가 겹쳐 -40% 넘게 빠졌다가, 경쟁사 감산으로 먼저 회복했어요.'},
+   {alias:'H자동차',real:'현대자동차',sec:'자동차',vol:3.5,k:[[0,100],[.2,85],[.44,50],[.55,45],[.75,55],[1,85]],ev:[[.5,'down','미국 자동차 판매 급감'],[.82,'up','"실직하면 차 반납" 마케팅, 미국 판매 선방']],story:'실직하면 차를 반납받아 주는 "어슈어런스" 프로그램으로 위기 속 미국 점유율을 늘렸어요.'},
+   {alias:'M증권',real:'미래에셋증권',sec:'증권',vol:4,k:[[0,100],[.3,75],[.44,35],[.6,45],[.8,50],[1,75]],ev:[[.38,'down','대표 펀드 반 토막, 펀드런 우려'],[.95,'up','증시 반등에 증권주 급등']],story:'펀드 열풍의 주인공이었지만 대표 펀드가 반 토막 나며 주가도 -60% 넘게 빠졌어요.'}]},
+ {id:'usdg',name:'2011 미국 신용등급 강등',short:'2011 등급 강등',period:'2011.06 ~ 2011.12 · 코스피',vol:1.8,k:[[0,2070],[.25,2172],[.3,2121],[.35,1801],[.4,1744],[.6,1652],[.75,1900],[.88,1840],[1,1825]],ann:[[.32,'S&P 미국 등급 강등'],[.6,'유럽 재정위기']],lesson:'하루 -6%가 며칠씩 이어져도, 몇 달 뒤엔 상당 부분 회복했어요.',
+  comps:[
+   {alias:'S전자',real:'삼성전자',sec:'반도체·스마트폰',vol:2.2,k:[[0,100],[.35,82],[.4,78],[.6,90],[.8,110],[1,118]],ev:[[.55,'up','신형 스마트폰 판매 호조'],[.85,'up','사상 최고가 경신 임박']],story:'폭락장에서도 스마트폰 판매 호조로 연말엔 오히려 사상 최고가를 새로 썼어요.'},
+   {alias:'H자동차',real:'현대자동차',sec:'자동차',vol:2.8,k:[[0,100],[.25,108],[.4,80],[.6,78],[.8,90],[1,88]],ev:[[.2,'up','"차화정" 랠리 지속'],[.38,'down','외국인, 주도주 대량 매도']],story:'자동차·화학·정유 "차화정" 주도주였지만 8월 폭락장에서 가장 크게 맞았어요.'},
+   {alias:'O케미칼',real:'OCI',sec:'태양광',vol:3.5,k:[[0,100],[.25,95],[.4,60],[.6,45],[.8,42],[1,40]],ev:[[.45,'down','폴리실리콘 가격 폭락']],story:'태양광 소재 가격이 무너지며 반년 만에 주가가 절반 아래로 내려왔어요.'}]},
+ {id:'boxpi',name:'2015~2016 박스피',short:'2015 박스피',period:'2015.04 ~ 2016.06 · 코스피',vol:0.9,k:[[0,2100],[.07,2170],[.3,1830],[.5,2040],[.62,1840],[.82,2010],[.95,1925],[1,1970]],ann:[[.3,'중국 증시 폭락'],[.95,'브렉시트 투표']],lesson:'지수는 제자리였지만, 종목에 따라 몇 배가 오르기도 했어요.',
+  comps:[
+   {alias:'H약품',real:'한미약품',sec:'제약·바이오',vol:3.5,k:[[0,100],[.2,140],[.35,230],[.5,480],[.55,500],[.7,370],[.85,330],[1,340]],ev:[[.15,'up','글로벌 제약사에 신약 기술수출'],[.45,'up','조 단위 초대형 기술수출 계약'],[.65,'down','바이오주 과열 논란, 차익 실현']],story:'연이은 조 단위 기술수출로 몇 달 만에 주가가 수 배로 뛰며 제약 바이오 붐을 이끌었어요.'},
+   {alias:'S전자',real:'삼성전자',sec:'반도체·스마트폰',vol:1.8,k:[[0,100],[.3,80],[.5,85],[.62,82],[.82,95],[1,100]],ev:[[.25,'down','스마트폰 판매 부진 우려'],[.75,'up','반도체 업황 회복 기대']],story:'스마트폰 부진으로 -20% 빠졌다가 반도체 회복 기대로 제자리로 돌아왔어요.'},
+   {alias:'A퍼시픽',real:'아모레퍼시픽',sec:'화장품',vol:2.5,k:[[0,100],[.15,120],[.3,95],[.5,105],[.7,100],[1,110]],ev:[[.12,'up','중국 관광객 몰려든다, 면세점 매출 폭증'],[.25,'down','중국 증시 폭락에 화장품주 급락']],story:'중국 관광객 특수로 황제주에 올랐지만, 중국 변수에 크게 출렁였어요.'}]},
+ {id:'semi',name:'2017 반도체 슈퍼사이클',short:'2017 반도체',period:'2017.01 ~ 2017.11 · 코스피',vol:0.7,k:[[0,2026],[.2,2160],[.3,2160],[.42,2350],[.6,2450],[.7,2320],[.88,2523],[1,2557]],ann:[[.42,'6년 박스권 돌파'],[.7,'북한 리스크']],lesson:'조용히, 꾸준히 오른 장. 일찍 팔고 떠난 사람이 가장 아쉬웠어요.',
+  comps:[
+   {alias:'S전자',real:'삼성전자',sec:'반도체',vol:1.5,k:[[0,100],[.3,115],[.5,125],[.7,130],[.9,155],[1,152]],ev:[[.4,'up','사상 최대 분기 실적 발표'],[.85,'up','메모리 슈퍼사이클 지속']],story:'메모리 호황으로 분기마다 사상 최대 실적을 갈아치우며 꾸준히 올랐어요.'},
+   {alias:'H닉스',real:'SK하이닉스',sec:'반도체',vol:2,k:[[0,100],[.3,105],[.5,115],[.7,150],[.9,185],[1,180]],ev:[[.65,'up','D램 가격 사상 최고']],story:'D램 가격 폭등의 최대 수혜주로 1년도 안 돼 80% 넘게 올랐어요.'},
+   {alias:'C바이오',real:'셀트리온',sec:'바이오',vol:3,k:[[0,100],[.4,110],[.6,105],[.8,150],[1,220]],ev:[[.75,'up','코스피 이전 상장 결정']],story:'코스닥 대장주가 코스피 이전을 결정하며 연말에 2배 넘게 급등했어요.'}]},
+ {id:'covid',name:'2020 코로나 쇼크',short:'2020 코로나',period:'2020.01 ~ 2020.08 · 코스피',vol:1.8,k:[[0,2175],[.1,2267],[.22,2242],[.3,1987],[.38,1457],[.44,1685],[.55,1947],[.75,2147],[.88,2249],[1,2350]],ann:[[.3,'팬데믹 공포'],[.38,'코스피 1457 바닥'],[.55,'동학개미운동']],lesson:'역사상 가장 빠른 폭락과 가장 빠른 회복. 바닥에서 산 개미가 웃었어요.',
+  comps:[
+   {alias:'S진단',real:'씨젠',sec:'진단키트',vol:5,k:[[0,100],[.2,95],[.3,140],[.38,250],[.6,350],[.8,600],[1,900]],ev:[[.3,'up','진단키트 긴급사용 승인'],[.6,'up','진단키트 수출 사상 최대']],story:'코로나 진단키트로 전 세계 주문이 몰리며 8개월 만에 주가가 약 9배가 됐어요.'},
+   {alias:'K톡',real:'카카오',sec:'플랫폼',vol:3,k:[[0,100],[.3,90],[.38,75],[.55,120],[.75,180],[1,260]],ev:[[.5,'up','언택트 대장주로 등극']],story:'비대면 시대의 대표 수혜주로 꼽히며 반년 만에 2.5배 넘게 올랐어요.'},
+   {alias:'K항공',real:'대한항공',sec:'항공',vol:4,k:[[0,100],[.2,85],[.38,55],[.5,70],[.8,65],[1,70]],ev:[[.25,'down','국제선 운항 90% 중단'],[.45,'up','화물 운송으로 흑자 전환 기대']],story:'하늘길이 막히며 반 토막 났지만, 여객기를 화물기로 돌려 버텼어요.'}]},
+ {id:'winter',name:'2021~22 동학개미의 겨울',short:'2021 개미의 겨울',period:'2021.06 ~ 2022.09 · 코스피',vol:1.1,k:[[0,3240],[.07,3305],[.15,3100],[.3,2950],[.4,3000],[.5,2614],[.6,2750],[.7,2600],[.8,2300],[.9,2490],[1,2155]],ann:[[.07,'코스피 3300 고점'],[.5,'연준 금리 인상'],[1,'2155까지 하락']],lesson:'3000 시대가 영원할 것 같았지만, 금리가 오르자 긴 겨울이 왔어요.',
+  comps:[
+   {alias:'K톡',real:'카카오',sec:'플랫폼',vol:2.8,k:[[0,100],[.05,115],[.2,85],[.4,75],[.6,60],[.8,45],[1,35]],ev:[[.15,'down','플랫폼 규제 리스크 부각'],[.55,'down','금리 인상에 성장주 직격탄']],story:'국민주로 불렸지만 규제와 금리 인상이 겹치며 고점 대비 -70% 가까이 떨어졌어요.'},
+   {alias:'H해운',real:'HMM',sec:'해운',vol:4,k:[[0,100],[.05,110],[.3,70],[.5,65],[.6,80],[.8,55],[1,45]],ev:[[.08,'up','컨테이너 운임 사상 최고'],[.75,'down','컨테이너 운임 급락 전환']],story:'물류 대란으로 운임이 폭등했다가, 운임이 꺾이자 주가도 절반 아래로 내려왔어요.'},
+   {alias:'S전자',real:'삼성전자',sec:'반도체',vol:1.6,k:[[0,100],[.1,103],[.3,88],[.5,90],[.7,82],[.85,75],[1,68]],ev:[[.3,'down','"메모리 겨울이 온다" 리포트']],story:'"10만 전자"를 기대하던 개미들 앞에서 5만 원대까지 내려왔어요.'}]},
+ {id:'bm24',name:'2024 여름 블랙먼데이',short:'2024 블랙먼데이',period:'2024.06 ~ 2024.12 · 코스피',vol:1.2,k:[[0,2680],[.2,2890],[.3,2676],[.32,2441],[.38,2697],[.5,2580],[.65,2600],[.8,2480],[.87,2500],[.92,2360],[1,2400]],ann:[[.32,'8/5 블랙먼데이 -8.8%'],[.38,'다음 날 급반등'],[.92,'12월 정치 불확실성']],lesson:'하루 -8.8%, 그리고 바로 반등. 패닉셀이 가장 비쌌던 날이었어요.',
+  comps:[
+   {alias:'H닉스',real:'SK하이닉스',sec:'반도체(AI 메모리)',vol:3,k:[[0,100],[.2,115],[.3,95],[.32,82],[.38,95],[.5,85],[.65,100],[.8,95],[1,90]],ev:[[.15,'up','AI 메모리 독점 공급 기대'],[.28,'down','AI 거품론 확산']],story:'AI 메모리 대장주로 급등했다가, AI 거품론과 블랙먼데이에 크게 흔들렸어요.'},
+   {alias:'S전자',real:'삼성전자',sec:'반도체',vol:2,k:[[0,100],[.2,105],[.32,90],[.5,78],[.7,70],[.8,62],[1,65]],ev:[[.6,'down','AI 메모리 경쟁력 우려, 외국인 연속 매도'],[.8,'down','"4만 전자" 공포 확산']],story:'AI 메모리 경쟁에서 밀린다는 우려로 반년 새 -35% 넘게 빠졌어요.'},
+   {alias:'K아연',real:'고려아연',sec:'비철금속',vol:5,k:[[0,100],[.45,105],[.55,140],[.65,160],[.75,250],[.8,170],[.9,200],[1,180]],ev:[[.5,'up','경영권 분쟁, 공개매수 발표'],[.72,'up','공개매수 가격 경쟁 과열']],story:'경영권 분쟁과 공개매수 전쟁으로 조용하던 종목이 몇 달 새 몇 배로 뛰었어요.'}]}
 ];
-const ASSETS=[
- {id:'idx',n:'시장 지수',s:'chart',tag:'x1'},
- {id:'lev',n:'레버리지',s:'rocket',tag:'x2'},
- {id:'inv',n:'인버스',s:'bear',tag:'x-1'},
- {id:'lev3',n:'3배 레버리지',s:'bomb',tag:'x3',perk:'lev3'},
- {id:'theme',n:'테마주',s:'seven',tag:'???',perk:'theme'}
-];
+const BASE_ASSETS=[{id:'idx',n:'시장 지수',s:'chart',tag:'x1'},{id:'lev',n:'레버리지',s:'rocket',tag:'x2'},{id:'inv',n:'인버스',s:'bear',tag:'x-1'}];
+let ASSETS=BASE_ASSETS;
 const PERKS={
- rumor:{n:'내부자 귀띔',s:'eye',r:'희귀',d:'찌라시 신뢰도 +15%p',stack:1},
+ vip:{n:'정보상 단골',s:'chest',r:'희귀',d:'정보 가격 -40%'},
+ scoop:{n:'특종 기자 인맥',s:'eye',r:'희귀',d:'2단계 특종 정확도 80% → 95%'},
  nofee:{n:'수수료 프리패스',s:'ticket',r:'일반',d:'매매 수수료 0원'},
  stop:{n:'자동 손절봇',s:'robot',r:'희귀',d:'한 주에 -7% 넘게 빠지면 즉시 전량 현금화'},
  rw1:{n:'회귀의 모래시계',s:'hourglass',r:'희귀',d:'회귀권 +1',stack:1},
  rw2:{n:'시간의 지배자',s:'hourglass',r:'전설',d:'회귀권 +2',stack:1},
  park:{n:'파킹통장',s:'piggy',r:'일반',d:'현금에 매주 +0.4% 이자',stack:1},
- lev3:{n:'3배 레버리지 해금',s:'bomb',r:'희귀',d:'3배 레버리지 거래 가능'},
- theme:{n:'테마주 해금',s:'seven',r:'일반',d:'변동성 미친 테마주 거래 가능'},
  mental:{n:'강철 멘탈',s:'brain',r:'일반',d:'깡통 기준 40% → 25%'},
- dream:{n:'예지몽',s:'crystal',r:'전설',d:'매 스테이지 2번, 다음 주 결과를 미리 봄'},
+ dream:{n:'예지몽',s:'crystal',r:'전설',d:'남은 기간 동안 2번, 다음 주 지수를 미리 봄'},
  combo:{n:'콤보 마스터',s:'fire',r:'희귀',d:'콤보 보너스 2배'},
- div:{n:'배당 귀족',s:'coin',r:'일반',d:'지수 보유액에 매주 +0.3% 배당',stack:1},
+ div:{n:'배당 귀족',s:'coin',r:'일반',d:'주식 보유액에 매주 +0.3% 배당',stack:1},
  leap:{n:'타임리프 숙련',s:'heart',r:'희귀',d:'회귀 발동 기준: 한 주 -10% → -6%'}
 };
-const TARGET=[0.9,1.0,1.1];
-const START=1e7, TURNS=20, DPT=5;
+const START=1e7, TURNS=30, DPT=5, CHESTS=[10,20];
 const HEAD={
- up:['외국인 3일 연속 순매수 조짐','증권가 "바닥 찍었다" 리포트 쏟아져','중앙은행 금리 인하 시사설','대형 수주 발표 임박이라는데?','공매도 세력 숏커버링 루머','큰손들 조용히 매집 중이라는 소문'],
- down:['대형 헤지펀드 청산설 돌아','신용 반대매매 물량 폭탄 경고','해외 은행 부실 루머 확산','외국인 대규모 매도 예고설','경기침체 지표 발표 앞두고 긴장','"이번 주 피바다" 지라시 돌아'],
+ up:['외국인 3일 연속 순매수 조짐','증권가 "바닥 찍었다" 리포트 쏟아져','중앙은행 금리 인하 시사설','큰손들 조용히 매집 중이라는 소문','공매도 세력 숏커버링 루머'],
+ down:['대형 헤지펀드 청산설 돌아','신용 반대매매 물량 폭탄 경고','해외 은행 부실 루머 확산','외국인 대규모 매도 예고설','"이번 주 피바다" 지라시 돌아'],
  flat:['관망세 짙어져… 거래량 실종','큰 이벤트 없이 눈치보기 장세','방향성 없는 박스권 예상']
+};
+const CHEAD={
+ up:a=>[`${a}, 대형 계약 체결 임박`,`${a}, 실적 서프라이즈 예고`,`외국인, ${a} 집중 매수 조짐`,`${a} 목표주가 일제히 상향`],
+ down:a=>[`${a}, 실적 쇼크 우려`,`${a} 대주주 지분 매각설`,`${a}, 규제 리스크 부각`,`기관, ${a} 대량 매도 조짐`],
+ flat:a=>[`${a}, 당분간 횡보 전망`,`${a} 관련 특이사항 없음`]
 };
 
 /* ========= state ========= */
-let run=null, st=null, busy=false;
-function newRun(){
- const eps=shuffle(EPS.map((_,i)=>i)).slice(0,3);
- run={eps,stageIdx:0,cash:START,perks:{},rewinds:1,insUsed:false,hist:[],dexNew:[],
-  stats:{trades:0,buys:0,sells:0,turns:0,cashSum:0,levSum:0,invSum:0,panic:0,dip:0,chase:0,rewinds:0,maxCombo:0,peak:START,mdd:0,events:0},
-  challenge:LS.get('antRegChal',null)};
- show('game');startStage();
-}
+let run=null, st=null, busy=false, EP=null;
 const P=k=>run.perks[k]||0;
-function genSeries(ep,rng){
- const N=TURNS*DPT,k=ep.k,idx=k.map(([t])=>Math.round(t*N)),lv=k.map(([,v])=>Math.log(v));
- const base=[],adj=[],w=[0],vol=ep.vol/100*1.15;
+function genSeries(o,rng){
+ const N=TURNS*DPT,k=o.k,idx=k.map(([t])=>Math.round(t*N)),lv=k.map(([,v])=>Math.log(v));
+ const base=[],adj=[],w=[0],vol=o.vol/100*(o.comp?.9:1.15);
  for(let i=1;i<=N;i++)w[i]=w[i-1]+gauss(rng)*vol;
  for(let j=0;j<k.length-1;j++){const a=idx[j],b=idx[j+1];for(let i=a;i<=b;i++){const f=b===a?0:(i-a)/(b-a);base[i]=lv[j]+(lv[j+1]-lv[j])*f;adj[i]=w[i]-(w[a]+(w[b]-w[a])*f)}}
  const p=base.map((v,i)=>Math.exp(v+adj[i]));return p.map(v=>v/p[0]*100);
 }
-function startStage(){
- const epi=run.eps[run.stageIdx],ep=EPS[epi],seed=Math.floor(Math.random()*1e9),rng=mulberry32(seed);
- const p=genSeries(ep,rng),N=TURNS*DPT,tn=[0];
- for(let d=1;d<=N;d++)tn[d]=gauss(rng)*.028+(rng()<.06?(rng()<.5?-1:1)*(.1+rng()*.14):0);
- const rumU=[],rumU2=[],rumH=[],ev=[],evU=[];
- for(let t=0;t<TURNS;t++){rumU[t]=rng();rumU2[t]=rng();rumH[t]=rng();evU[t]=rng();ev[t]=(t>0&&t<TURNS-1&&rng()<.2)?Math.floor(rng()*EVENTS.length):-1}
- st={epi,p,tn,rumU,rumU2,rumH,ev,evU,turn:0,cash:run.cash,hold:{idx:0,lev:0,inv:0,lev3:0,theme:0},debt:0,combo:0,startAsset:run.cash,peek:P('dream')?2:0,marks:[],lock:false,snaps:[],lastMkt:0,lastA:{}};
+const evWeek=t=>Math.min(TURNS-1,Math.floor(t*TURNS));
+function newRun(){
+ const epi=Math.floor(Math.random()*EPS.length);EP=EPS[epi];
+ const seed=Math.floor(Math.random()*1e9),rng=mulberry32(seed);
+ ASSETS=[...BASE_ASSETS,...EP.comps.map((c,i)=>({id:'c'+i,n:c.alias,s:'bldg',tag:c.sec,ci:i}))];
+ run={epi,perks:{},rewinds:1,dexNew:[],chests:{},
+  stats:{trades:0,buys:0,sells:0,turns:0,cashSum:0,levSum:0,invSum:0,panic:0,dip:0,chase:0,rewinds:0,maxCombo:0,peak:START,mdd:0,events:0,infoBuys:0,infoSpent:0}};
+ const p=genSeries(EP,rng),cp=EP.comps.map(c=>genSeries({...c,comp:1},rng));
+ const rumU=[],rumU2=[],rumH=[],ev=[],evU=[],infoC=[],iu1=[],iu2=[],ih=[];
+ for(let t=0;t<TURNS;t++){
+  rumU[t]=rng();rumU2[t]=rng();rumH[t]=rng();evU[t]=rng();ev[t]=(t>0&&t<TURNS-1&&rng()<.17)?Math.floor(rng()*EVENTS.length):-1;
+  const withEv=EP.comps.map((c,i)=>c.ev.some(e=>evWeek(e[0])===t)?i:-1).filter(i=>i>=0);
+  infoC[t]=withEv.length?withEv[Math.floor(rng()*withEv.length)]:Math.floor(rng()*EP.comps.length);iu1[t]=rng();iu2[t]=rng();ih[t]=rng();
+ }
+ const hold={idx:0,lev:0,inv:0};EP.comps.forEach((_,i)=>hold['c'+i]=0);
+ st={p,cp,rumU,rumU2,rumH,ev,evU,infoC,iu1,iu2,ih,turn:0,cash:START,hold,debt:0,combo:0,peek:0,marks:[],lock:false,snaps:[],lastMkt:0,lastA:{},info:{lv:0,lines:[]},news:[]};
+ show('game');
  SC.city=genCity(seed);SC.mood='flat';SC.ant='neutral';SC.board='????';SC.bcol='#ffd23f';
  snapshot();render();
- setTimeout(()=>{banner(`STAGE ${run.stageIdx+1}`,'var(--gold)',`목표 ${fmt(st.startAsset*TARGET[run.stageIdx])} 이상`);say('start')},250);
+ setTimeout(()=>{banner('START!','var(--gold)','어느 시대인지 알아내고, 시장을 이겨라');say('start')},250);
 }
 
 /* ========= core ========= */
 const invested=()=>Object.values(st.hold).reduce((a,b)=>a+b,0);
 const asset=()=>st.cash+invested();
 const bankLine=()=>START*(P('mental')?.25:.4);
-const acc=()=>Math.min(.9,.6+.15*P('rumor'));
-function ar(id,d){const r=st.p[d]/st.p[d-1]-1;let x;switch(id){case'idx':x=r;break;case'lev':x=2*r;break;case'inv':x=-r;break;case'lev3':x=3*r;break;case'theme':x=1.6*r+st.tn[d];break}return Math.max(-.95,x)}
-function mktWeek(t){return st.p[(t+1)*DPT]/st.p[t*DPT]-1}
-function dirOf(R){return R>.012?'up':R<-.012?'down':'flat'}
-function rumor(t){const real=dirOf(mktWeek(t));let dir=real;if(st.rumU[t]>=acc()){const o=['up','down','flat'].filter(x=>x!==real);dir=o[Math.floor(st.rumU2[t]*2)]}const pool=HEAD[dir];return{dir,text:pool[Math.floor(st.rumH[t]*pool.length)]}}
-function snapshot(){st.snaps[st.turn]=JSON.stringify({cash:st.cash,hold:st.hold,debt:st.debt,combo:st.combo,marks:st.marks,peek:st.peek,lastMkt:st.lastMkt,lastA:st.lastA})}
+const rwLine=()=>P('leap')?.06:.1;
+function ar(id,d){if(id[0]==='c'){const c=st.cp[+id[1]];return c[d]/c[d-1]-1}const r=st.p[d]/st.p[d-1]-1;return id==='idx'?r:id==='lev'?Math.max(-.95,2*r):-r}
+const mktWeek=t=>st.p[(t+1)*DPT]/st.p[t*DPT]-1;
+const compWeek=(i,t)=>st.cp[i][(t+1)*DPT]/st.cp[i][t*DPT]-1;
+const dirOf=R=>R>.012?'up':R<-.012?'down':'flat';
+const flip=(d,u)=>d==='up'?'down':d==='down'?'up':(u<.5?'up':'down');
+function rumor(t){const real=dirOf(mktWeek(t));let dir=real;if(st.rumU[t]>=.6){const o=['up','down','flat'].filter(x=>x!==real);dir=o[Math.floor(st.rumU2[t]*2)]}const pool=HEAD[dir];return{dir,text:pool[Math.floor(st.rumH[t]*pool.length)]}}
+function snapshot(){st.snaps[st.turn]=JSON.stringify({cash:st.cash,hold:st.hold,debt:st.debt,combo:st.combo,marks:st.marks,peek:st.peek,lastMkt:st.lastMkt,lastA:st.lastA,info:st.info,news:st.news})}
 
 function trade(id,side,frac,el){
  if(busy||st.lock)return;
  const fee=P('nofee')?0:.001,d=st.turn*DPT;
  if(side==='b'){const amt=st.cash*frac;if(amt<1000)return;st.cash-=amt;st.hold[id]+=amt*(1-fee);run.stats.buys++;if(st.lastMkt<=-.03)run.stats.dip++;if(st.lastMkt>=.03)run.stats.chase++;sfx.buy();coinBurst(el,4)}
  else{const amt=st.hold[id]*frac;if(amt<1)return;st.hold[id]-=amt;if(st.hold[id]<1)st.hold[id]=0;st.cash+=amt*(1-fee);run.stats.sells++;if(st.lastMkt<=-.03)run.stats.panic++;sfx.sell()}
- run.stats.trades++;st.marks.push({d,s:side});render();
+ run.stats.trades++;st.marks.push({d,s:side,a:id});render();
+}
+
+/* ===== 정보상 (런닝맨 '투자의 귀재들' 방식) ===== */
+const INFO_NAME=['업계 소문','기자의 특종','내부자 쪽지'];
+function infoCost(lv){return Math.max(30000,Math.round(asset()*[.005,.015,.04][lv]*(P('vip')?.6:1)/1000)*1000)}
+function buyInfo(){
+ if(busy||st.turn>=TURNS)return;const lv=st.info.lv;if(lv>=3)return;
+ const cost=infoCost(lv);if(st.cash<cost){floatText('현금 부족!','var(--down)');sfx.crash();return}
+ st.cash-=cost;run.stats.infoBuys++;run.stats.infoSpent+=cost;
+ const t=st.turn,ci=st.infoC[t],c=EP.comps[ci],R=compWeek(ci,t),real=dirOf(R);let line;
+ if(lv===0){const d=st.iu1[t]<.6?real:flip(real,st.ih[t]);line=d==='up'?`"${c.alias} 쪽에 좋은 소식이 있다던데…"`:d==='down'?`"${c.alias} 쪽 분위기가 영 안 좋다던데…"`:`"${c.alias}는 이번 주 조용할 거라던데…"`}
+ else if(lv===1){const d=st.iu2[t]<(P('scoop')?.95:.8)?real:flip(real,st.ih[t]);const e=c.ev.find(e=>evWeek(e[0])===t&&e[1]===d);const pool=CHEAD[d](c.alias);line=`[단독] ${e?e[2]:pool[Math.floor(st.ih[t]*pool.length)]}`}
+ else line=`${c.alias} 다음 주 ${pct(R)} — 이건 확실해.`;
+ st.info.lines.push({lv,t:line});st.info.lv++;
+ lv===2?sfx.big():sfx.coin();if(lv===2)flash('#b26bff');render();
 }
 
 async function nextWeek(){
  if(busy)return;busy=true;sfx.click();
- const s=run.stats,A0=asset();s.turns++;s.cashSum+=st.cash/A0;s.levSum+=(st.hold.lev+st.hold.lev3+st.hold.theme)/A0;s.invSum+=st.hold.inv/A0;
+ const s=run.stats,A0=asset();s.turns++;s.cashSum+=st.cash/A0;s.levSum+=st.hold.lev/A0;s.invSum+=st.hold.inv/A0;
  const t=st.turn,aStart={};ASSETS.forEach(a=>aStart[a.id]=1);
  let stopped=false;render();
  for(let i=1;i<=DPT;i++){
@@ -467,27 +538,26 @@ async function nextWeek(){
   const A=asset();s.peak=Math.max(s.peak,A);s.mdd=Math.max(s.mdd,1-A/s.peak);
   const dr=st.p[d]/st.p[t*DPT]-1;SC.board=pct(dr);SC.bcol=dr>=0?'#ff5a6a':'#6aa0ff';
   sfx.tick(st.p[d]>=st.p[d-1]);render(d);
-  if(A<bankLine()){
-   await sleep(250);
-   if(run.rewinds>0&&await offerRewind('death'))return doRewind(t);
-   return bankrupt();
-  }
+  if(A<bankLine()){await sleep(250);if(run.rewinds>0&&await offerRewind('death'))return doRewind(t);return bankrupt()}
   await sleep(170);
  }
  if(P('park')&&st.cash>0)st.cash*=1+.004*P('park');
- if(P('div')&&st.hold.idx>0)st.cash+=st.hold.idx*.003*P('div');
+ if(P('div'))st.cash+=(invested()-st.hold.inv)*.003*P('div');
  const A1=asset(),R=A1/A0-1;st.lastMkt=mktWeek(t);
  ASSETS.forEach(a=>st.lastA[a.id]=aStart[a.id]-1);
+ st.news=[];EP.comps.forEach((c,i)=>c.ev.forEach(e=>{if(evWeek(e[0])===t)st.news.push(`${e[2]} (${c.alias} ${pct(st.lastA['c'+i])})`)}));
  weekFx(R,A1-A0,st.lastMkt);
  if(R<=-rwLine()&&run.rewinds>0){await sleep(1100);if(await offerRewind('crash',R))return doRewind(t)}
  if(R>.001&&invested()>0){st.combo++;s.maxCombo=Math.max(s.maxCombo,st.combo);
-  const B={3:.01,5:.02,8:.03,12:.05}[st.combo];
+  const B={3:.01,5:.02,8:.03,12:.05,16:.07}[st.combo];
   if(B){const bonus=asset()*B*(P('combo')?2:1);st.cash+=bonus;setTimeout(()=>{banner(`COMBO x${st.combo}`,'var(--gold)',`콤보 보너스 +${fmt(bonus)}`);sfx.big();confetti(['#ffd23f','#ff8a1f','#fff']);render()},750)}}
  else st.combo=0;
- st.turn++;st.lock=false;
- if(st.turn>=TURNS){render();await sleep(1000);return endStage()}
+ st.turn++;st.lock=false;st.info={lv:0,lines:[]};
+ if(st.turn>=TURNS){render();await sleep(1000);return finishRun(null)}
  snapshot();render();
  await sleep(Math.abs(R)>=.04?950:350);
+ if(CHESTS.includes(st.turn)&&!run.chests[st.turn]){run.chests[st.turn]=1;await perkPick()}
+ if(P('dream')&&!run.dreamGiven){run.dreamGiven=1;st.peek=2}
  busy=false;render();
  triggerEvent(st.turn);
 }
@@ -502,8 +572,6 @@ function weekFx(R,dv,mkt){
  else if(R<=-.04){banner(pct(R),'var(--down)','아야…');sfx.crash();shake();say('sad')}
  else if(R>.005)say('happy');else if(R<-.005)say('sad');
 }
-
-const rwLine=()=>P('leap')?.06:.1;
 function offerRewind(kind,R){
  return new Promise(res=>{
   sfx.rewind();SC.sepia=true;
@@ -533,13 +601,7 @@ function bankrupt(){
  sfx.dread();shake();flash('#000');SC.mood='crash';SC.ant='cry';SC.board='GAME OVER';SC.bcol='#ff4d5e';say('shock');
  const s=document.createElement('div');s.className='stamp';s.textContent='깡 통';$('#fx').appendChild(s);
  for(const k in st.hold)st.hold[k]=0;st.cash=Math.max(0,asset());render();
- setTimeout(()=>{s.remove();finishStage(false,'깡통')},2000);
-}
-function endStage(){
- for(const k in st.hold){st.cash+=st.hold[k];st.hold[k]=0}
- if(st.debt){st.cash-=st.debt;floatText(`빚 상환 -${fmt(st.debt)}`,'var(--down)')}
- const pass=st.cash>=st.startAsset*TARGET[run.stageIdx];
- finishStage(pass,pass?null:'퇴출');
+ setTimeout(()=>{s.remove();finishRun('깡통')},2000);
 }
 function ghosts(p){
  const N=TURNS*DPT,end=p[N],hodl=end/p[0]-1;
@@ -549,45 +611,36 @@ function ghosts(p){
   if(r<=-.04&&c>0){const b=Math.min(c,.2);c-=b;u+=b/px}else if(r>=.05&&u>0){const sv=Math.min(u*px,.2);u-=sv/px;c+=sv}}
  return[{n:'존버 (지수 100%)',r:hodl},{n:'매주 적립식',r:dca-1},{n:'역발상 고수',r:c+u*end-1},{n:'현금 100%',r:0}];
 }
-function finishStage(pass,reason){
+function finishRun(reason){
  busy=true;
- const ep=EPS[st.epi],ret=st.cash/st.startAsset-1;
- run.hist.push({epi:st.epi,p:st.p.slice(),marks:st.marks.slice(),ret,ghosts:ghosts(st.p),pass,upto:reason==='깡통'?st.day:TURNS*DPT});
- run.cash=st.cash;
- const dex=LS.get('antRegDex',[]);if(!dex.includes(ep.id)){dex.push(ep.id);LS.set('antRegDex',dex);run.dexNew.push(ep.id)}
- const opts=shuffle([st.epi,...shuffle(EPS.map((_,i)=>i).filter(i=>i!==st.epi)).slice(0,2)]);
- const head=reason==='깡통'?`${S('ant:cry',80)}<h2>깡통…</h2><div class="dlg tw">하지만 마지막으로 알아맞혀 봐. 여긴 몇 년도였을까?</div>`:reason==='퇴출'?`${S('ant:sad',80)}<h2>목표 미달, 퇴출</h2><div class="dlg tw">그래도 이 시대가 언제였는지는 알고 가자.</div>`:`${S('trophy',80)}<h2>시대 종료!</h2><div class="dlg tw">당신이 버틴 이 장은… 몇 년도였을까?</div>`;
- modal(head+`<p class="small" style="margin-top:8px">맞히면 보너스 +3%</p>`,opts.map(i=>({l:EPS[i].short,c:'dark',f:()=>reveal(i===st.epi,pass,reason)})));
+ for(const k in st.hold){st.cash+=st.hold[k];st.hold[k]=0}
+ if(st.debt&&reason!=='깡통'){st.cash-=st.debt;floatText(`빚 상환 -${fmt(st.debt)}`,'var(--down)')}
+ const dex=LS.get('antRegDex',[]);if(!dex.includes(EP.id)){dex.push(EP.id);LS.set('antRegDex',dex);run.dexNew.push(EP.id)}
+ run.upto=reason==='깡통'?st.day:TURNS*DPT;
+ const opts=shuffle([run.epi,...shuffle(EPS.map((_,i)=>i).filter(i=>i!==run.epi)).slice(0,2)]);
+ const head=reason==='깡통'?`${S('ant:cry',80)}<h2>깡통…</h2><div class="dlg tw">하지만 마지막으로 알아맞혀 봐. 여긴 몇 년도였을까?</div>`:`${S('trophy',80)}<h2>30주 생존!</h2><div class="dlg tw">당신이 버틴 이 장은… 몇 년도였을까? 기업 가명이 힌트야.</div>`;
+ modal(head+`<p class="small" style="margin-top:8px">맞히면 보너스 +3%</p>`,opts.map(i=>({l:EPS[i].short,c:'dark',f:()=>{const ok=i===run.epi;if(ok&&st.cash>0){st.cash*=1.03;sfx.win()}else sfx.dread();ending(reason,ok)}})));
 }
-function reveal(ok,pass,reason){
- const ep=EPS[st.epi],h=run.hist[run.hist.length-1];
- if(ok&&run.cash>0){run.cash+=run.cash*.03;sfx.win();confetti(['#ffd23f','#fff','#b26bff'],40)}else sfx.dread();
- const hodl=h.ghosts[0].r,last=run.stageIdx===2;
- const nxt=!pass?{l:'최종 결과 보기',c:'gold',f:()=>ending(false,reason)}:last?{l:'최종 결과 보기',c:'gold',f:()=>ending(true)}:{l:'보상 상자 열기',c:'gold',f:perkPick};
- modal(`<div class="pf" style="font-size:13px;color:${ok?'var(--green)':'var(--up)'};text-shadow:2px 2px 0 #000">${ok?'CORRECT! +3%':'WRONG…'}</div>
- <div class="era"><div class="small">사실 이 장은…</div><div class="en">${ep.name}</div><div class="small">${ep.period}</div><p style="margin-top:10px;font-size:14px">${ep.lesson}</p></div>
- <div class="cmp"><span>내 수익률</span><b class="${cls(h.ret)}">${pct(h.ret)}</b></div>
- <div class="cmp"><span>그냥 존버했다면</span><b class="${cls(hodl)}">${pct(hodl)}</b></div>
- ${run.dexNew.includes(ep.id)?'<p class="pf" style="font-size:9px;color:var(--gold);margin-top:10px">NEW! 위기 도감 등록</p>':''}`,[nxt]);
-}
-function perkPick(){
- const pool=Object.keys(PERKS).filter(k=>PERKS[k].stack||!P(k)),w={일반:60,희귀:30,전설:10},pick=[];
- while(pick.length<3&&pick.length<pool.length){let tot=0;const c=pool.filter(k=>!pick.includes(k));c.forEach(k=>tot+=w[PERKS[k].r]);let r=Math.random()*tot;for(const k of c){r-=w[PERKS[k].r];if(r<=0){pick.push(k);break}}}
- sfx.coin();const box=$('#mbox');$('#modal').classList.add('on');
- box.innerHTML=`${S('chest',72)}<h2>보상을 골라라</h2><p class="small">다음 시대로 가져갈 능력 하나</p><div class="cards">${pick.map(k=>{const p=PERKS[k];return`<button class="tcg r-${p.r}" data-k="${k}"><div class="rb pf">${p.r==='전설'?'LEGEND':p.r==='희귀'?'RARE':'NORMAL'}</div><div class="art">${S(p.s,48)}</div><div class="pn">${p.n}</div><div class="pd">${p.d}</div></button>`}).join('')}</div>`;
- box.querySelectorAll('.tcg').forEach(b=>b.onclick=()=>{const k=b.dataset.k;run.perks[k]=(run.perks[k]||0)+1;if(k==='rw1')run.rewinds+=1;if(k==='rw2')run.rewinds+=2;
-  PERKS[k].r==='전설'?sfx.big():sfx.win();closeModal();run.stageIdx++;busy=false;startStage()});
+async function perkPick(){
+ return new Promise(res=>{
+  const pool=Object.keys(PERKS).filter(k=>PERKS[k].stack||!P(k)),w={일반:60,희귀:30,전설:10},pick=[];
+  while(pick.length<3&&pick.length<pool.length){let tot=0;const c=pool.filter(k=>!pick.includes(k));c.forEach(k=>tot+=w[PERKS[k].r]);let r=Math.random()*tot;for(const k of c){r-=w[PERKS[k].r];if(r<=0){pick.push(k);break}}}
+  sfx.coin();const box=$('#mbox');$('#modal').classList.add('on');
+  box.innerHTML=`<p class="pf" style="font-size:9px;color:var(--gold)">WEEK ${st.turn} SUPPLY</p>${S('chest',72)}<h2>보급 상자 도착!</h2><p class="small">남은 기간을 함께할 능력 하나</p><div class="cards">${pick.map(k=>{const p=PERKS[k];return`<button class="tcg r-${p.r}" data-k="${k}"><div class="rb pf">${p.r==='전설'?'LEGEND':p.r==='희귀'?'RARE':'NORMAL'}</div><div class="art">${S(p.s,48)}</div><div class="pn">${p.n}</div><div class="pd">${p.d}</div></button>`}).join('')}</div>`;
+  box.querySelectorAll('.tcg').forEach(b=>b.onclick=()=>{const k=b.dataset.k;run.perks[k]=(run.perks[k]||0)+1;if(k==='rw1')run.rewinds+=1;if(k==='rw2')run.rewinds+=2;
+   PERKS[k].r==='전설'?sfx.big():sfx.win();closeModal();render();res()});
+ });
 }
 
 /* ========= events ========= */
 const EVENTS=[
  {s:'seven',t:'친구의 급등주 정보',d:'"야 이거 내일 상한가 간다. 진짜임." 현금 20%를 걸어볼까?',ch:[{l:'걸어본다 (45% 확률 2.5배)',c:'red',f:u=>{const b=st.cash*.2;if(b<1000)return'현금이 없어서 못 걸었다…';st.cash-=b;if(u<.45){st.cash+=b*2.5;sfx.big();confetti();SC.jump=12;return`대박!! ${fmt(b*2.5)} 회수!`}st.cash+=b*.3;sfx.crash();shake();SC.ant='shock';return`물렸다… ${fmt(b*.3)}만 건졌다.`}},{l:'무시한다',c:'dark',f:()=>'현명한 선택일지도?'}]},
  {s:'coin',t:'용돈 입금',d:'부모님이 용돈을 보내주셨다. "밥은 먹고 다니니"',ch:[{l:'감사합니다! (+₩300,000)',c:'gold',f:()=>{st.cash+=3e5;sfx.coin();return'+₩300,000 입금!'}}]},
- {s:'robot',t:'증권사 앱 먹통',d:'접속자 폭주로 이번 주 매매가 불가능하다!',ch:[{l:'강제 존버…',c:'dark',f:()=>{st.lock=true;return'이번 주는 손이 묶였다.'}}]},
+ {s:'robot',t:'증권사 앱 먹통',d:'접속자 폭주로 이번 주 매매가 불가능하다!',ch:[{l:'강제 존버…',c:'dark',f:()=>{st.lock=true;return'이번 주는 손이 묶였다. (정보는 살 수 있다)'}}]},
  {s:'chest',t:'신규 고객 이벤트',d:'증권사가 선물을 하나 고르라고 한다.',ch:[{l:'회귀권 +1',c:'purp',f:()=>{run.rewinds++;sfx.coin();return'회귀권을 얻었다!'}},{l:'현금 +₩500,000',c:'gold',f:()=>{st.cash+=5e5;sfx.coin();return'+₩500,000 입금!'}}]},
- {s:'skull',t:'빚투 권유',d:'"형이 300 빌려줄게. 이 장 끝나면 330만 갚아."',ch:[{l:'빌린다',c:'red',f:()=>{st.cash+=3e6;st.debt+=3.3e6;sfx.coin();return'₩3,000,000 입금. 시대가 끝나면 ₩3,300,000 상환.'}},{l:'거절한다',c:'dark',f:()=>'빚은 무섭다.'}]},
- {s:'eye',t:'주식 유튜버 라이브',d:'"여러분 이번 주는 무조건 ___ 합니다!!" (적중률 50%)',ch:[{l:'들어본다',c:'purp',f:u=>{const real=dirOf(mktWeek(st.turn));const say2=u<.5?real:(real==='up'?'down':'up');return`유튜버: "이번 주 무조건 ${say2==='up'?'떡상':say2==='down'?'떡락':'횡보'}!!"`}},{l:'끈다',c:'dark',f:()=>'귀가 편안해졌다.'}]},
- {s:'coin',t:'깜짝 배당',d:'보유 주식에 배당금이 나왔다.',ch:[{l:'받는다',c:'gold',f:()=>{const v=invested()*.015;st.cash+=v;sfx.coin();return v>0?'+'+fmt(v)+' 입금!':'보유 주식이 없어서 0원…'}}]}
+ {s:'skull',t:'빚투 권유',d:'"형이 300 빌려줄게. 끝나면 330만 갚아."',ch:[{l:'빌린다',c:'red',f:()=>{st.cash+=3e6;st.debt+=3.3e6;sfx.coin();return'₩3,000,000 입금. 게임이 끝나면 ₩3,300,000 상환.'}},{l:'거절한다',c:'dark',f:()=>'빚은 무섭다.'}]},
+ {s:'eye',t:'주식 유튜버 라이브',d:'"여러분 이번 주는 무조건 ___ 합니다!!" (적중률 50%)',ch:[{l:'들어본다',c:'purp',f:u=>{const real=dirOf(mktWeek(st.turn));const d=u<.5?real:(real==='up'?'down':'up');return`유튜버: "이번 주 시장 무조건 ${d==='up'?'떡상':d==='down'?'떡락':'횡보'}!!"`}},{l:'끈다',c:'dark',f:()=>'귀가 편안해졌다.'}]},
+ {s:'coin',t:'정보상의 할인 쿠폰',d:'단골 정보상이 이번 주 1단계 정보를 공짜로 주겠다고 한다.',ch:[{l:'받는다',c:'gold',f:()=>{const c=st.cash;st.cash+=infoCost(0);buyInfo();st.cash=c;return'정보상 대화창을 확인해 보자.'}}]}
 ];
 function triggerEvent(t,deja){
  const id=st.ev[t];if(id<0)return;const E=EVENTS[id],u=st.evU[t];run.stats.events++;sfx.coin();
@@ -596,25 +649,33 @@ function triggerEvent(t,deja){
 
 /* ========= render ========= */
 function render(upto){
- const d=upto??st.turn*DPT,A=asset(),tg=st.startAsset*TARGET[run.stageIdx];
- $('#stg').textContent=`STAGE ${run.stageIdx+1}/3`;
- $('#weeks').innerHTML=Array.from({length:TURNS},(_,i)=>`<i class="${i<st.turn?'d':i===st.turn?'c':''}"></i>`).join('');
+ const d=upto??st.turn*DPT,A=asset();
+ $('#stg').textContent=`WEEK ${Math.min(st.turn+1,TURNS)}/${TURNS}`;
+ $('#weeks').innerHTML=Array.from({length:TURNS},(_,i)=>`<i class="${i<st.turn?'d':i===st.turn?'c':''} ${CHESTS.includes(i)?'ch':''}"></i>`).join('');
  $('#rwIcons').innerHTML=S('hourglass',18)+`<span class="pf">x${run.rewinds}</span>`;
- const tot=$('#total');tot.textContent=fmt(A);tot.style.color=A>=st.startAsset?'var(--up)':A<st.startAsset*.97?'var(--down)':'var(--txt)';
- const lo=bankLine(),hi=Math.max(tg*1.25,A),ratio=(A-lo)/(hi-lo);
- $('#barI').style.width=Math.max(0,Math.min(100,ratio*100))+'%';$('#barT').style.left=((tg-lo)/(hi-lo)*100)+'%';
- $('#hp').className='hpbar'+(A<lo*1.35?' low':A<tg?' mid':'');
- $('#danger').innerHTML=`${S('skull',12)} ${fmt(lo)}`;$('#goal').innerHTML=`목표 ${fmt(tg)} ${S('trophy',12)}`;
+ const tot=$('#total');tot.textContent=fmt(A);tot.style.color=A>=START?'var(--up)':A<START*.97?'var(--down)':'var(--txt)';
+ const lo=bankLine(),hi=Math.max(START*1.6,A*1.05);
+ $('#barI').style.width=Math.max(0,Math.min(100,(A-lo)/(hi-lo)*100))+'%';$('#barT').style.left=((START-lo)/(hi-lo)*100)+'%';
+ $('#hp').className='hpbar'+(A<lo*1.35?' low':A<START?' mid':'');
+ $('#danger').innerHTML=`${S('skull',12)} 깡통 ${fmt(lo)}`;$('#goal').innerHTML=`원금 ${fmt(START)} ${S('trophy',12)}`;
  const cb=$('#combo');if(st.combo>=2){cb.style.display='flex';cb.innerHTML=`${S('fire',20)}x${st.combo}`}else cb.style.display='none';
- $('#wk').textContent=`WEEK ${Math.min(st.turn+1,TURNS)}`;
+ const nx=CHESTS.find(c=>c>st.turn);$('#wk').textContent=nx?`SUPPLY IN ${nx-st.turn}W`:'';
  $('#cash').textContent=`현금 ${fmt(st.cash)}${st.debt?` · 빚 ${fmt(st.debt)}`:''}`;
  $('#idxv').textContent=`IDX ${st.p[d].toFixed(1)}`;
- if(st.turn<TURNS){const r=rumor(st.turn);$('#rIcon').innerHTML=S('eye',40);$('#rtx').textContent=r.text;$('#racc').textContent=`RUMOR ${Math.round(acc()*100)}% · ${r.dir==='up'?'▲ 호재':r.dir==='down'?'▼ 악재':'■ 관망'}`;$('#racc').style.color=r.dir==='up'?'var(--up)':r.dir==='down'?'#7fb0ff':'var(--purple)'}
+ $('#ticker').innerHTML=`<span>${st.news.length?'📰 지난주 뉴스 · '+st.news.join('   ·   '):'📰 지난주 특별한 기업 뉴스 없음'}</span>`;
+ if(st.turn<TURNS){const r=rumor(st.turn);$('#rIcon').innerHTML=S('eye',40);$('#rtx').textContent=r.text;$('#racc').textContent=`MARKET NEWS 60% · ${r.dir==='up'?'▲ 호재':r.dir==='down'?'▼ 악재':'■ 관망'}`;$('#racc').style.color=r.dir==='up'?'var(--up)':r.dir==='down'?'#7fb0ff':'var(--purple)'}
+ // shop
+ const lv=st.info.lv;
+ $('#shopLines').innerHTML=st.info.lines.length?st.info.lines.map(l=>`<div class="sline l${l.lv}"><span class="pf">STEP ${l.lv+1}</span>${l.t}</div>`).join(''):`<div class="sline l9">${S('ant:neutral',22)}"이번 주 정보 필요해? 싼 것부터 차례로 팔아."</div>`;
+ const sb=$('#shopBtn');
+ if(lv<3){sb.style.display='block';sb.innerHTML=`${lv+1}단계 · ${INFO_NAME[lv]} 사기 <span class="pf" style="font-size:10px">${fmt(infoCost(lv))}</span><br><span style="font-size:11px;opacity:.85">${['어느 기업 이야기인지 + 방향 (정확도 60%)','실제 기사 헤드라인 (정확도 '+(P('scoop')?95:80)+'%)','다음 주 정확한 등락률 (100%)'][lv]}</span>`;sb.disabled=busy||st.cash<infoCost(lv)}
+ else sb.style.display='none';
+ $('#shopT').textContent=`이번 주 ${lv}/3`;
  const pk=Object.keys(run.perks);$('#perkBar').innerHTML=pk.map(k=>`<span class="pchip" title="${PERKS[k].d}">${S(PERKS[k].s,20)}${PERKS[k].n}${run.perks[k]>1?' x'+run.perks[k]:''}</span>`).join('');
  const lock=st.lock||busy,nc=lock||st.cash<1000;
- $('#assets').innerHTML=(st.lock?'<p class="lockmsg">앱 먹통 — 이번 주 매매 불가</p>':'')+ASSETS.filter(a=>!a.perk||P(a.perk)).map(a=>{
+ $('#assets').innerHTML=(st.lock?'<p class="lockmsg">앱 먹통 — 이번 주 매매 불가</p>':'')+ASSETS.map((a,ai)=>{
   const h=st.hold[a.id],ch=st.lastA[a.id];
-  return`<div class="slot ${h>0?'has':''}"><div class="icon">${S(a.s,36)}</div><div><div class="an">${a.n}<span class="tag pf">${a.tag}</span></div><div class="ach ${ch!=null?cls(ch):'small'}">${ch!=null?'지난주 '+pct(ch):'—'}</div></div>
+  return`${ai===3?'<div class="divider pf">STOCKS · 가명으로 표시돼요</div>':''}<div class="slot ${h>0?'has':''}"><div class="icon">${S(a.s,36)}</div><div><div class="an">${a.n}${a.ci!=null?'':`<span class="tag pf">${a.tag}</span>`}${a.ci!=null?`<span class="sec2">${a.tag}</span>`:''}</div><div class="ach ${ch!=null?cls(ch):'small'}">${ch!=null?'지난주 '+pct(ch):'—'}</div></div>
   <div class="ah">${h>0?fmt(h):'<span class="small">EMPTY</span>'}</div>
   <div class="btns"><button class="pbtn red" data-a="${a.id}" data-s="b" data-f=".25" ${nc?'disabled':''}>25%</button><button class="pbtn red" data-a="${a.id}" data-s="b" data-f=".5" ${nc?'disabled':''}>50%</button><button class="pbtn red" data-a="${a.id}" data-s="b" data-f="1" ${nc?'disabled':''}>올인</button><button class="pbtn blue" data-a="${a.id}" data-s="s" data-f=".5" ${lock||h<1?'disabled':''}>반</button><button class="pbtn blue" data-a="${a.id}" data-s="s" data-f="1" ${lock||h<1?'disabled':''}>전량</button></div></div>`}).join('');
  const pb=$('#peekBtn');pb.style.display=P('dream')?'flex':'none';pb.innerHTML=`${S('crystal',22)}x${st.peek}`;pb.disabled=busy||st.peek<1;
@@ -632,11 +693,10 @@ function drawChart(cv,p,upto,marks,ann){
  c.fillStyle='#2c4a6a';for(let x=8;x<w-8;x+=6)c.fillRect(x,Math.round(Y(100)),3,1);
  const col=vis[vis.length-1]>=100?'#ff4d5e':'#4d8dff';
  if(ann)ann.forEach(([t,l],ai)=>{const i=Math.round(t*N);if(i>upto)return;c.fillStyle='#ffd23f88';for(let y=6;y<h-8;y+=4)c.fillRect(Math.round(X(i)),y,1,2);c.fillStyle='#ffd23f';c.font='bold 10px Noto Sans KR';const tw=c.measureText(l).width;c.fillText(l,Math.min(Math.max(X(i)-tw/2,2),w-tw-2),12+(ai%2)*13)});
- // step-style pixel line
- c.beginPath();vis.forEach((v,i)=>{const x=Math.round(X(i)),y=Math.round(Y(v));if(!i)c.moveTo(x,y);else{c.lineTo(x,Math.round(Y(vis[i-1])));c.lineTo(x,y)}});
- c.lineTo(Math.round(X(upto)),h);c.lineTo(Math.round(X(0)),h);c.closePath();const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,col+'55');g.addColorStop(1,col+'00');c.fillStyle=g;c.fill();
- c.beginPath();vis.forEach((v,i)=>{const x=Math.round(X(i)),y=Math.round(Y(v));if(!i)c.moveTo(x,y);else{c.lineTo(x,Math.round(Y(vis[i-1])));c.lineTo(x,y)}});c.strokeStyle=col;c.lineWidth=2;c.shadowColor=col;c.shadowBlur=8;c.stroke();c.shadowBlur=0;
- (marks||[]).forEach(m=>{if(m.d>upto)return;const x=Math.round(X(m.d)),y=Math.round(Y(p[m.d]));c.fillStyle=m.s==='b'?'#ff4d5e':'#4d8dff';c.strokeStyle='#000';c.lineWidth=1;
+ const path=()=>{c.beginPath();vis.forEach((v,i)=>{const x=Math.round(X(i)),y=Math.round(Y(v));if(!i)c.moveTo(x,y);else{c.lineTo(x,Math.round(Y(vis[i-1])));c.lineTo(x,y)}})};
+ path();c.lineTo(Math.round(X(upto)),h);c.lineTo(Math.round(X(0)),h);c.closePath();const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,col+'55');g.addColorStop(1,col+'00');c.fillStyle=g;c.fill();
+ path();c.strokeStyle=col;c.lineWidth=2;c.shadowColor=col;c.shadowBlur=8;c.stroke();c.shadowBlur=0;
+ (marks||[]).forEach(m=>{if(m.d>upto)return;const x=Math.round(X(m.d)),y=Math.round(Y(p[m.d]));c.fillStyle=m.s==='b'?'#ff4d5e':'#4d8dff';
   if(m.s==='b'){c.fillRect(x-1,y+6,3,3);c.fillRect(x-3,y+9,7,3);c.fillRect(x-5,y+12,11,2)}else{c.fillRect(x-1,y-9,3,3);c.fillRect(x-3,y-12,7,3);c.fillRect(x-5,y-14,11,2)}});
  const lx=Math.round(X(upto)),ly=Math.round(Y(vis[vis.length-1]));c.fillStyle='#fff';c.fillRect(lx-3,ly-3,6,6);c.fillStyle=col;c.fillRect(lx-2,ly-2,4,4);
 }
@@ -658,88 +718,90 @@ function closeModal(){$('#modal').classList.remove('on')}
 
 /* ========= persona & ending ========= */
 const PERSONAS={
- fire:{s:'fire',n:'불나방 개미',t:'"인생은 한 방, 레버리지는 사랑"',d:'오르는 걸 보면 참지 못하고, 레버리지를 사랑하는 타입. 맞으면 크게 먹지만 한 번 틀리면 계좌가 증발해요.',good:'상승장에서 폭발력 최강',bad:'하락장 한 번에 회복 불가능한 손실',chal:{id:'nolev',t:'레버리지·3배·테마주 없이 스테이지 2 이상 도달'},tip:'고수들은 레버리지를 "확신이 클 때 짧게"만 써요. 비중 20%를 넘기지 않는 게 공통점이에요.'},
- rock:{s:'ant:cool',n:'존버 장인',t:'"팔지 않으면 잃은 게 아니다"',d:'한번 사면 웬만해선 안 파는 타입. 장기 우상향 장에선 최강이지만, 긴 하락장에선 함께 가라앉을 수 있어요.',good:'뇌동매매·수수료 손실이 거의 없음',bad:'닷컴 버블 같은 장에선 -80%도 견뎌야 함',chal:{id:'cash30',t:'평균 현금 비중 30% 이상 유지하며 스테이지 2 이상 도달'},tip:'존버 고수들은 "무엇을" 들고 버틸지를 먼저 골라요. 그리고 하락장에 살 현금을 조금 남겨둬요.'},
- squirrel:{s:'piggy',n:'다람쥐 현금러',t:'"현금도 종목이다"',d:'불안할 땐 일단 현금. 큰 손실은 피하지만, 반등장을 구경만 하다 끝나기 쉬워요.',good:'깡통 위험 최저, 멘탈 안정',bad:'상승장 수익을 대부분 놓침',chal:{id:'invested',t:'평균 현금 비중 40% 이하로 스테이지 2 이상 도달'},tip:'현금 고수들은 "언제 쓸지" 규칙이 있어요. 예: 지수가 -10% 빠질 때마다 현금의 1/3씩 투입.'},
- flash:{s:'bolt',n:'단타 번개',t:'"주 단위 보유는 장기투자"',d:'매주 뭔가를 사고팔아야 직성이 풀리는 타입. 감은 좋을 수 있지만 수수료와 판단 피로가 쌓여요.',good:'시장 변화에 빠르게 반응',bad:'잦은 매매로 수수료·실수 누적',chal:{id:'calm',t:'총 매매 15회 이하로 스테이지 2 이상 도달'},tip:'단타 고수들도 매매 횟수보다 "손절 규칙"을 먼저 정해요. 들어가기 전에 나올 가격부터 정하는 거죠.'},
- hunter:{s:'target',n:'역발상 사냥꾼',t:'"공포에 사라"',d:'남들이 패닉일 때 줍고, 인버스로 하락에도 베팅할 줄 아는 타입. 실제 고수들에게 가장 많이 보이는 패턴이에요.',good:'위기를 기회로 바꾸는 능력',bad:'떨어지는 칼날을 너무 일찍 잡을 수 있음',chal:{id:'norewind',t:'회귀권을 한 번도 쓰지 않고 스테이지 2 이상 도달'},tip:'역발상 고수들은 한 번에 다 사지 않아요. 3~5번에 나눠 사면서 바닥을 맞히려 하지 않는 게 핵심이에요.'},
- panic:{s:'ant:shock',n:'공포의 손절러',t:'"일단 팔고 생각하자"',d:'빨간불보다 파란불에 더 민감한 타입. 떨어진 직후에 팔고, 반등은 놓치는 패턴이 반복됐어요.',good:'큰 손실 전에 빠져나올 줄 앎',bad:'바닥에서 팔고 반등을 놓침',chal:{id:'nopanic',t:'폭락 주(-3% 이하) 다음에 한 번도 팔지 않고 스테이지 2 이상 도달'},tip:'폭락 직후 판 개미가 반등을 놓치는 장면은 위기 때마다 반복돼 왔어요. 고수들은 "팔 이유"를 미리 정해둬요.'}
+ fire:{s:'fire',n:'불나방 개미',t:'"인생은 한 방, 레버리지는 사랑"',d:'오르는 걸 보면 참지 못하고, 레버리지를 사랑하는 타입. 맞으면 크게 먹지만 한 번 틀리면 계좌가 증발해요.',good:'상승장에서 폭발력 최강',bad:'하락장 한 번에 회복 불가능한 손실',tip:'고수들은 레버리지를 "확신이 클 때 짧게"만 써요. 비중 20%를 넘기지 않는 게 공통점이에요.'},
+ rock:{s:'ant:cool',n:'존버 장인',t:'"팔지 않으면 잃은 게 아니다"',d:'한번 사면 웬만해선 안 파는 타입. 장기 우상향 장에선 최강이지만, 긴 하락장에선 함께 가라앉을 수 있어요.',good:'뇌동매매·수수료 손실이 거의 없음',bad:'닷컴 버블 같은 장에선 -80%도 견뎌야 함',tip:'존버 고수들은 "무엇을" 들고 버틸지를 먼저 골라요. 그리고 하락장에 살 현금을 조금 남겨둬요.'},
+ squirrel:{s:'piggy',n:'다람쥐 현금러',t:'"현금도 종목이다"',d:'불안할 땐 일단 현금. 큰 손실은 피하지만, 반등장을 구경만 하다 끝나기 쉬워요.',good:'깡통 위험 최저, 멘탈 안정',bad:'상승장 수익을 대부분 놓침',tip:'현금 고수들은 "언제 쓸지" 규칙이 있어요. 예: 지수가 -10% 빠질 때마다 현금의 1/3씩 투입.'},
+ flash:{s:'bolt',n:'단타 번개',t:'"주 단위 보유는 장기투자"',d:'매주 뭔가를 사고팔아야 직성이 풀리는 타입. 감은 좋을 수 있지만 수수료와 판단 피로가 쌓여요.',good:'시장 변화에 빠르게 반응',bad:'잦은 매매로 수수료·실수 누적',tip:'단타 고수들도 매매 횟수보다 "손절 규칙"을 먼저 정해요. 들어가기 전에 나올 가격부터 정하는 거죠.'},
+ hunter:{s:'target',n:'역발상 사냥꾼',t:'"공포에 사라"',d:'남들이 패닉일 때 줍고, 인버스로 하락에도 베팅할 줄 아는 타입. 실제 고수들에게 가장 많이 보이는 패턴이에요.',good:'위기를 기회로 바꾸는 능력',bad:'떨어지는 칼날을 너무 일찍 잡을 수 있음',tip:'역발상 고수들은 한 번에 다 사지 않아요. 3~5번에 나눠 사면서 바닥을 맞히려 하지 않는 게 핵심이에요.'},
+ panic:{s:'ant:shock',n:'공포의 손절러',t:'"일단 팔고 생각하자"',d:'빨간불보다 파란불에 더 민감한 타입. 떨어진 직후에 팔고, 반등은 놓치는 패턴이 반복됐어요.',good:'큰 손실 전에 빠져나올 줄 앎',bad:'바닥에서 팔고 반등을 놓침',tip:'폭락 직후 판 개미가 반등을 놓치는 장면은 위기 때마다 반복돼 왔어요. 고수들은 "팔 이유"를 미리 정해둬요.'},
+ spy:{s:'eye',n:'정보 수집광',t:'"아는 만큼 번다"',d:'매주 정보상을 찾아가 확실해질 때까지 정보를 사는 타입. 정보는 정확해지지만, 정보값이 수익을 갉아먹기도 해요.',good:'근거 있는 매매',bad:'정보 비용이 쌓이면 수익률이 깎임',tip:'실전에선 "내부자 쪽지"가 없어요. 고수들은 공개된 정보(공시·실적)를 꾸준히 읽고, 확신이 없을 땐 비중을 줄여요.'}
 };
 function personaOf(s){
  const T=s.turns||1,act=s.trades/T,cash=s.cashSum/T,lev=s.levSum/T,inv=s.invSum/T,B=Math.max(1,s.buys),Sx=Math.max(1,s.sells);
- const sc={fire:lev*3+s.chase/B*1.2,rock:(act<.45?1.2:0)*(1-cash)*1.6+(s.sells<=3?.4:0),squirrel:cash*2,flash:act*.85,hunter:s.dip/B*2+inv*2.5,panic:s.panic/Sx*2.2*(s.sells>=2?1:.3)};
+ const sc={fire:lev*3+s.chase/B*1.2,rock:(act<.45?1.2:0)*(1-cash)*1.6+(s.sells<=3?.4:0),squirrel:cash*2,flash:act*.85,hunter:s.dip/B*2+inv*2.5,panic:s.panic/Sx*2.2*(s.sells>=2?1:.3),spy:s.infoBuys/T*.9};
  return Object.entries(sc).sort((a,b)=>b[1]-a[1])[0][0];
 }
-function checkChal(ch,s,cleared){if(!ch)return null;const T=s.turns||1,ok2=cleared>=1;return{nolev:s.levSum===0&&ok2,cash30:s.cashSum/T>=.3&&ok2,invested:s.cashSum/T<=.4&&ok2,calm:s.trades<=15&&ok2,norewind:s.rewinds===0&&ok2,nopanic:s.panic===0&&ok2}[ch.id]}
 const GHOSTS=[
- {n:'전설의 개미 "줍줍신"',a:38420000,st:3,pt:'현금 40% 유지, -5% 주간에만 분할매수'},
- {n:'레버리지 광인',a:29150000,st:3,pt:'상승 찌라시에만 2배 올인, 회귀권 3회'},
- {n:'적립식 할머니',a:13900000,st:3,pt:'매주 같은 금액 지수 매수, 매도 0회'},
- {n:'존버의 신',a:11200000,st:2,pt:'1주차 올인 후 아무것도 안 함'},
- {n:'유튜버 맹신러',a:3100000,st:1,pt:'유튜버 말만 듣고 테마주 올인'}
+ {n:'전설의 개미 "줍줍신"',al:41.2,r:.352,era:'2008 금융위기',pt:'현금 40% 유지, 폭락 주간에만 분할매수'},
+ {n:'정보상 VIP',al:33.8,r:.612,era:'2020 코로나',pt:'매주 3단계 정보까지 구매 후 한 종목 집중'},
+ {n:'적립식 할머니',al:6.1,r:.187,era:'2017 반도체',pt:'매주 같은 금액 지수 매수, 매도 0회'},
+ {n:'존버의 신',al:0,r:-.031,era:'2015 박스피',pt:'1주차 지수 올인 후 아무것도 안 함'},
+ {n:'유튜버 맹신러',al:-38.5,r:-.512,era:'2000 닷컴',pt:'유튜버 말만 듣고 S기술 올인'}
 ];
-function ending(win,reason){
+function ending(reason,guessOk){
  busy=true;closeModal();show('ending');scrollTo(0,0);
- const s=run.stats,cleared=run.hist.filter(h=>h.pass).length,final=run.cash,pk=personaOf(s),pe=PERSONAS[pk];
- const chalRes=checkChal(run.challenge,s,cleared);LS.set('antRegChal',pe.chal);
- const T=s.turns||1,dex=LS.get('antRegDex',[]),best=LS.get('antRegBest',0);if(final>best)LS.set('antRegBest',final);
- const evid=[['주당 평균 매매',(s.trades/T).toFixed(1)+'회'],['평균 현금 비중',Math.round(s.cashSum/T*100)+'%'],['레버리지류 평균 비중',Math.round(s.levSum/T*100)+'%'],['인버스 평균 비중',Math.round(s.invSum/T*100)+'%'],['폭락 주 다음 매도 (패닉셀)',s.panic+'회'],['폭락 주 다음 매수 (줍줍)',s.dip+'회'],['급등 주 다음 매수 (추격)',s.chase+'회'],['최대 낙폭 (MDD)','-'+Math.round(s.mdd*100)+'%'],['최대 콤보','x'+s.maxCombo],['회귀권 사용',s.rewinds+'회']];
+ const s=run.stats,final=st.cash,ret=final/START-1,mkt=st.p[TURNS*DPT]/st.p[0]-1,alpha=(ret-mkt)*100,pk=personaOf(s),pe=PERSONAS[pk];
+ const T=s.turns||1,dex=LS.get('antRegDex',[]),best=LS.get('antRegBest',-999);if(alpha>best)LS.set('antRegBest',alpha);
+ const gh=ghosts(st.p),all=[{n:'나',r:ret,me:1},...gh],m=Math.max(.05,...all.map(g=>Math.abs(g.r)));
+ const evid=[['주당 평균 매매',(s.trades/T).toFixed(1)+'회'],['평균 현금 비중',Math.round(s.cashSum/T*100)+'%'],['레버리지 평균 비중',Math.round(s.levSum/T*100)+'%'],['인버스 평균 비중',Math.round(s.invSum/T*100)+'%'],['정보 구매',s.infoBuys+'회 · '+fmt(s.infoSpent)],['폭락 주 다음 매도 (패닉셀)',s.panic+'회'],['폭락 주 다음 매수 (줍줍)',s.dip+'회'],['급등 주 다음 매수 (추격)',s.chase+'회'],['최대 낙폭 (MDD)','-'+Math.round(s.mdd*100)+'%'],['최대 콤보','x'+s.maxCombo],['회귀권 사용',s.rewinds+'회']];
+ const N=TURNS*DPT;
  $('#endw').innerHTML=`
- <div class="hero">${S(win?'trophy':reason==='깡통'?'ant:cry':'ant:sad',96)}
-  <div class="pf" style="font-size:11px;color:var(--mut);margin-top:10px">${win?'ALL CLEAR':'GAME OVER'}</div>
-  <div class="hk" style="color:${win?'var(--gold)':'var(--down)'}">${win?'3개의 시대 생존!':reason==='깡통'?'깡통 엔딩':'퇴출 엔딩'}</div>
+ <div class="hero">${S(reason==='깡통'?'ant:cry':alpha>=0?'trophy':'ant:sad',96)}
+  <div class="pf" style="font-size:11px;color:var(--mut);margin-top:10px">${reason==='깡통'?'GAME OVER':'30 WEEKS SURVIVED'}</div>
+  <div class="hk" style="color:${alpha>=0?'var(--gold)':'var(--down)'}">${reason==='깡통'?'깡통 엔딩':alpha>=0?'시장을 이겼다!':'시장에 졌다…'}</div>
   <div class="pf" style="font-size:20px;margin-top:10px;text-shadow:3px 3px 0 #000">${fmt(final)}</div>
-  <div class="${cls(final/START-1)}" style="font-weight:900;margin-top:6px">${pct(final/START-1)} · STAGE ${cleared}/3 CLEAR</div></div>
- ${run.challenge?`<div class="chal">도전과제: ${run.challenge.t}<br><b class="${chalRes?'ok':'dn'}">${chalRes?'성공! 성향을 극복했어요':'실패… 다음엔 꼭!'}</b></div>`:''}
- <div class="sec pf">▶ REPLAY · 회귀했던 시대</div>
- ${run.hist.map((h,i)=>{const ep=EPS[h.epi],all=[{n:'나',r:h.ret,me:1},...h.ghosts],m=Math.max(.05,...all.map(g=>Math.abs(g.r)));
-  return`<div class="px panel rep"><div class="row"><b>STAGE ${i+1} · ${ep.name}</b><span class="pf ${h.pass?'ok':'dn'}" style="font-size:9px">${h.pass?'CLEAR':'FAIL'}</span></div><div class="small">${ep.period}</div>
-  <canvas data-i="${i}"></canvas><div class="small" style="margin-bottom:8px">▲ 내 매수 · ▼ 내 매도 · 노란 선 = 실제 사건</div>
-  ${all.map(g=>`<div class="gh ${g.me?'me':''}"><span class="gl">${g.n}</span><span class="gb"><i style="left:${g.r>=0?50:50-Math.abs(g.r)/m*50}%;width:${Math.abs(g.r)/m*50}%;background:${g.r>=0?'var(--up)':'var(--down)'}"></i></span><span class="gv ${cls(g.r)}">${pct(g.r)}</span></div>`).join('')}
-  <p class="small" style="margin-top:8px;line-height:1.6">${ep.lesson}</p></div>`}).join('')}
+  <div style="font-weight:900;margin-top:6px"><span class="${cls(ret)}">수익률 ${pct(ret)}</span> · <span class="${cls(alpha)}">시장 대비 ${alpha>=0?'+':''}${alpha.toFixed(1)}%p</span></div>
+  <div class="small" style="margin-top:4px">${guessOk?'시대 맞히기 성공 +3% 포함':'시대 맞히기 실패'}</div></div>
+ <div class="sec pf">▶ REVEAL · 정답 공개</div>
+ <div class="era"><div class="small">사실 이 장은…</div><div class="en">${EP.name}</div><div class="small">${EP.period}</div><p style="margin-top:10px;font-size:14px">${EP.lesson}</p></div>
+ <div class="px panel rep"><b>내 매매 리플레이</b>
+  <canvas id="repc"></canvas><div class="small" style="margin-bottom:8px">▲ 내 매수 · ▼ 내 매도 · 노란 선 = 실제 사건</div>
+  ${all.map(g=>`<div class="gh ${g.me?'me':''}"><span class="gl">${g.n}</span><span class="gb"><i style="left:${g.r>=0?50:50-Math.abs(g.r)/m*50}%;width:${Math.abs(g.r)/m*50}%;background:${g.r>=0?'var(--up)':'var(--down)'}"></i></span><span class="gv ${cls(g.r)}">${pct(g.r)}</span></div>`).join('')}</div>
+ <div class="px panel"><b>가명 속 진짜 기업</b>
+  ${EP.comps.map((c,i)=>{const r=st.cp[i][run.upto]/st.cp[i][0]-1,n=st.marks.filter(x=>x.a==='c'+i).length;return`<div class="creal"><div class="row"><span>${S('bldg',28)}<b>${c.alias}</b> → <b style="color:var(--gold)">${c.real}</b></span><b class="${cls(r)}">${pct(r)}</b></div><p>${c.story}</p><div class="small">${c.sec} · 내 매매 ${n}회</div></div>`}).join('')}
+  <p class="small" style="margin-top:8px">기업 주가 흐름은 실제 흐름을 근사한 게임용 데이터예요.</p></div>
  <div class="sec pf">▶ YOUR TYPE · 투자 성향</div>
  <div class="px persona">${S(pe.s,96)}<div class="pn">${pe.n}</div><div class="pt">${pe.t}</div><div class="pdsc">${pe.d}</div>
   <div class="gb2"><div><b class="up">강점</b><br>${pe.good}</div><div><b class="dn">약점</b><br>${pe.bad}</div></div>
   <button class="pbtn gold mbtn" id="share" style="width:100%;margin-top:14px">결과 복사해서 자랑하기</button></div>
  <div class="px panel"><b>이렇게 판단했어요</b><ul class="ev" style="margin-top:6px">${evid.map(([a,b])=>`<li><span>${a}</span><b>${b}</b></li>`).join('')}</ul></div>
  <div class="px panel" style="background:#22174a"><div class="row" style="justify-content:flex-start">${S('brain',28)}<b>고수들의 패턴</b></div><p style="font-size:14px;line-height:1.7;margin-top:6px;color:#dcdaf2">${pe.tip}</p></div>
+ <div class="sec pf">▶ HALL OF FAME · 시장 대비 수익</div>
+ <div class="px panel"><ul class="rk" id="rk"></ul><div class="in1" id="regw"><input id="nm" maxlength="10" placeholder="닉네임 (최대 10자)" value="익명 개미"><button class="pbtn gold" id="reg">등록</button></div></div>
  <div class="sec pf">▶ CRISIS DEX ${dex.length}/${EPS.length}</div>
  <div class="dex">${EPS.map(e=>{const on=dex.includes(e.id),nw=run.dexNew.includes(e.id);return`<div class="dx ${on?'on':''} ${nw?'new':''}">${on?S('chart',22)+e.short+(nw?'<span class="pf" style="font-size:7px">NEW!</span>':''):S('skull',20)+'???'}</div>`}).join('')}</div>
- <div class="sec pf">▶ HALL OF FAME</div>
- <div class="px panel"><ul class="rk" id="rk"></ul><div class="in1" id="regw"><input id="nm" maxlength="10" placeholder="닉네임 (최대 10자)" value="익명 개미"><button class="pbtn gold" id="reg">등록</button></div></div>
- <div class="sec pf">▶ NEXT QUEST</div>
- <div class="chal">${pe.n}을 위한 처방<br><b>${pe.chal.t}</b></div>
  <button class="pbtn gold press pf" id="again" style="margin-top:20px">▶ 다시 회귀하기</button>
- <p class="note">차트는 실제 과거 지수 흐름을 근사해 압축한 게임용 데이터입니다. 투자 성향 결과는 게임 내 행동 기반 재미용 분석이며 투자 권유가 아닙니다.</p>`;
- document.querySelectorAll('.rep canvas').forEach(cv=>{const h=run.hist[+cv.dataset.i];drawChart(cv,h.p,h.upto,h.marks,EPS[h.epi].ann)});
+ <p class="note">지수·기업 차트는 실제 과거 흐름을 근사해 압축한 게임용 데이터입니다. 투자 성향 결과는 게임 내 행동 기반 재미용 분석이며 투자 권유가 아닙니다.</p>`;
+ drawChart($('#repc'),st.p,run.upto,st.marks,EP.ann);
  renderRank(null);
- $('#reg').onclick=()=>{const nm=($('#nm').value||'익명 개미').slice(0,10);const r=LS.get('antRegRank',[]);const me={n:nm,a:Math.round(final),st:cleared,pt:`${pe.n} · 회귀 ${s.rewinds}회 · 최대콤보 ${s.maxCombo}`,id:Date.now()};r.push(me);LS.set('antRegRank',r);$('#regw').style.display='none';renderRank(me.id);sfx.win()};
- $('#share').onclick=async()=>{const txt=`🐜 ANTERNAL RETURN 결과\n유형: ${pe.n} ${pe.t}\n최종 자산: ${fmt(final)} (${pct(final/START-1)})\n회귀한 시대: ${run.hist.map(h=>EPS[h.epi].short).join(' → ')}\n스테이지 ${cleared}/3 클리어 · 최대 콤보 ${s.maxCombo}\n#ANTERNAL_RETURN`;
+ $('#reg').onclick=()=>{const nm=($('#nm').value||'익명 개미').slice(0,10);const r=LS.get('antRegRank2',[]);const me={n:nm,al:+alpha.toFixed(1),r:ret,era:EP.short,pt:`${pe.n} · 정보 ${s.infoBuys}회 · 최대콤보 ${s.maxCombo}`,id:Date.now()};r.push(me);LS.set('antRegRank2',r);$('#regw').style.display='none';renderRank(me.id);sfx.win()};
+ $('#share').onclick=async()=>{const txt=`🐜 ANTERNAL RETURN 결과\n시대: ${EP.name}\n유형: ${pe.n} ${pe.t}\n수익률 ${pct(ret)} · 시장 대비 ${alpha>=0?'+':''}${alpha.toFixed(1)}%p\n#ANTERNAL_RETURN`;
   try{await navigator.clipboard.writeText(txt);$('#share').textContent='복사 완료!'}catch(e){$('#share').textContent='아래 내용을 직접 복사하세요';const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;text-align:left;font-size:12px;margin-top:8px;user-select:all';pre.textContent=txt;$('#share').after(pre)}};
  $('#again').onclick=()=>{sfx.click();busy=false;newRun()};
- if(win){sfx.big();confetti();setTimeout(confetti,600)}
+ if(alpha>=0&&reason!=='깡통'){sfx.big();confetti();setTimeout(confetti,600)}
 }
 function renderRank(myId){
- const r=[...GHOSTS.map(g=>({...g,ghost:1})),...LS.get('antRegRank',[])].sort((a,b)=>b.st-a.st||b.a-a.a).slice(0,10);
- $('#rk').innerHTML=r.map((x,i)=>`<li class="${x.id===myId?'me':''} ${i<3?'top':''}"><span class="no pf">${i+1}</span>${i===0?S('trophy',22):x.ghost?S('ant:neutral',22):S('ant:happy',22)}<span class="nm">${x.n}${x.ghost?' <span class="small">(고스트)</span>':''}<small>${x.pt}</small></span><span style="text-align:right"><b>${fmt(x.a)}</b><br><span class="small">${x.st}/3</span></span></li>`).join('');
+ const r=[...GHOSTS.map(g=>({...g,ghost:1})),...LS.get('antRegRank2',[])].sort((a,b)=>b.al-a.al).slice(0,10);
+ $('#rk').innerHTML=r.map((x,i)=>`<li class="${x.id===myId?'me':''} ${i<3?'top':''}"><span class="no pf">${i+1}</span>${i===0?S('trophy',22):x.ghost?S('ant:neutral',22):S('ant:happy',22)}<span class="nm">${x.n}${x.ghost?' <span class="small">(고스트)</span>':''}<small>${x.era} · ${x.pt}</small></span><span style="text-align:right"><b class="${cls(x.al)}">${x.al>=0?'+':''}${x.al.toFixed(1)}%p</b><br><span class="small">수익 ${pct(x.r)}</span></span></li>`).join('');
 }
 
 /* ========= screens ========= */
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id))}
 function intro(){
- $('#rules').innerHTML=[['chart','매주 <b>지수·레버리지·인버스</b>를 사고팔아 3개의 시대를 버텨라'],['eye','찌라시는 <b>가끔 거짓말</b>을 한다'],['hourglass','<b>회귀권</b>: 깡통이 나거나 한 주 -10%를 맞으면 <b>1주 전으로 회귀</b>'],['fire','연속 수익 <b>콤보</b>를 쌓으면 보너스'],['skull','자산 40% 이하 = <b>깡통</b> · 목표 미달 = <b>퇴출</b>'],['crystal','시대가 끝나면 <b>몇 년도였는지 맞혀라</b>']].map(([s,t])=>`<div>${S(s,20)}${t}</div>`).join('');
- const best=LS.get('antRegBest',0),dex=LS.get('antRegDex',[]),ch=LS.get('antRegChal',null);
- $('#introInfo').innerHTML=(best?`<span class="chip">${S('trophy',16)}최고 기록 <b>${fmt(best)}</b></span>`:'')+`<span class="chip">${S('chart',16)}위기 도감 <b>${dex.length}/${EPS.length}</b></span>`+(ch?`<div class="chal" style="margin-top:10px;text-align:left">도전과제: ${ch.t}</div>`:'');
+ $('#rules').innerHTML=[['chart','과거 어느 시대의 증시에서 <b>30주</b>를 버텨라'],['bldg','그 시대 <b>실존 기업</b>에 투자 (가명으로 등장)'],['eye','<b>정보상</b>: 소문 → 특종 → 내부자 쪽지, <b>단계별로 사는 정보</b>'],['hourglass','<b>회귀권</b>: 깡통이나 한 주 -10%를 맞으면 <b>1주 전으로</b>'],['chest','10주·20주차에 <b>보급 상자</b>'],['trophy','랭킹은 <b>시장 대비 초과수익</b>으로']].map(([s,t])=>`<div>${S(s,20)}${t}</div>`).join('');
+ const best=LS.get('antRegBest',null),dex=LS.get('antRegDex',[]);
+ $('#introInfo').innerHTML=(best!=null&&best>-999?`<span class="chip">${S('trophy',16)}최고 기록 <b>시장 대비 ${best>=0?'+':''}${(+best).toFixed(1)}%p</b></span>`:'')+`<span class="chip">${S('chart',16)}위기 도감 <b>${dex.length}/${EPS.length}</b></span>`;
 }
 const IS=new Scene($('#introScene'));IS.mood='night';IS.ant='cool';IS.board='1998?';IS.bcol='#ffd23f';IS.antX=72;scenes.push(IS);IS.draw();
 setInterval(()=>{IS.board=['1998?','2008?','2020?','20XX?'][Math.random()*4|0];if(Math.random()<.4)IS.jump=9},2200);
 SC=new Scene($('#scene'));scenes.push(SC);
 $('#startBtn').onclick=()=>{sfx.win();newRun()};
-$('#next').onclick=nextWeek;$('#peekBtn').onclick=peek;
+$('#next').onclick=nextWeek;$('#peekBtn').onclick=peek;$('#shopBtn').onclick=buyInfo;
 $('#mute').onclick=()=>{muted=!muted;$('#mute').textContent=muted?'×':'♪'};
 addEventListener('resize',()=>{if(st&&$('#game').classList.contains('on'))drawChart($('#chart'),st.p,busy&&st.day?st.day:st.turn*DPT,st.marks)});
 addEventListener('keydown',e=>{if(!$('#game').classList.contains('on')||$('#modal').classList.contains('on'))return;if(e.code==='Space'||e.code==='Enter'){e.preventDefault();nextWeek()}});
 intro();
+
 </script>
 </body>
 </html>
